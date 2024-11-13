@@ -5,18 +5,17 @@ import numpy as np
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
-from PIL import Image
 import imutils
 
 # 设置页面标题
-st.set_page_config(page_title="Federated Learning Dashboard", layout="wide")
+st.set_page_config(page_title="Dashboard", layout="wide")
 
 # 侧边栏导航
 with st.sidebar:
     selected = option_menu(
         "Navigation",
-        ["About", "Result", "Training", "Image Mask Detection", "Real-time Camera Detection"],
-        icons=["info", "bar-chart", "graph-up", "image", "camera"],
+        ["About", "Result", "Image Mask Detection", "Real-time Camera Detection"],
+        icons=["info", "bar-chart", "image", "camera"],
         menu_icon="cast",
         default_index=0,
     )
@@ -71,7 +70,7 @@ faceNet, maskNet = load_models()
 if selected == "About":
     st.title("About")
     st.write("""
-    Welcome to the **Federated Learning Dashboard**! This platform is designed to provide insights, 
+    Welcome to the **Dashboard**! This platform provides insights, 
     demonstrations, and results of experiments.
     """)
 
@@ -80,9 +79,7 @@ elif selected == "Result":
     st.title("Result")
     st.write("Below are the results of experiments conducted on various datasets.")
 
-# Training 页面
-elif selected == "Training":
-    st.title("Training")
+    # 显示训练结果图片
     st.image("plot.png", caption="Training Progress", use_column_width=True)
 
 # Image Mask Detection 页面
@@ -92,12 +89,21 @@ elif selected == "Image Mask Detection":
 
     uploaded_file = st.file_uploader("Choose an image file", type=["jpg", "png", "jpeg"])
     if uploaded_file is not None:
+        # 原始图像处理
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
         image = cv2.imdecode(file_bytes, 1)
+
+        # 创建两个列，用于并排显示图像
+        col1, col2 = st.columns(2)
+
+        # 显示原始图像
+        with col1:
+            st.image(image[:, :, ::-1], channels="RGB", caption="Original Image", width=300)
 
         # 检测图像中的口罩
         (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
 
+        # 在图像上绘制检测结果
         for (box, pred) in zip(locs, preds):
             (startX, startY, endX, endY) = box
             (mask, withoutMask) = pred
@@ -109,7 +115,9 @@ elif selected == "Image Mask Detection":
             cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
             cv2.rectangle(image, (startX, startY), (endX, endY), color, 2)
 
-        st.image(image[:, :, ::-1], channels="RGB")
+        # 显示预测图像
+        with col2:
+            st.image(image[:, :, ::-1], channels="RGB", caption="Prediction Image", width=300)
 
 # Real-time Camera Detection 页面
 elif selected == "Real-time Camera Detection":
