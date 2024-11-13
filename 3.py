@@ -13,7 +13,7 @@ st.set_page_config(page_title="Dashboard", layout="wide")
 # 侧边栏导航
 with st.sidebar:
     selected = option_menu(
-        "Navigation",
+        "Mask-Detection",
         ["About", "Result", "Image Mask Detection", "Real-time Camera Detection"],
         icons=["info", "bar-chart", "image", "camera"],
         menu_icon="cast",
