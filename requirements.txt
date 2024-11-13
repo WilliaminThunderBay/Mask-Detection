@@ -1,11 +1,16 @@
+# Streamlit version
 streamlit==1.16.0
+streamlit-option-menu
+
+# TensorFlow version compatible with Python 3.9
 tensorflow==2.9.0
-keras==2.9.0
-opencv-python-headless==4.7.0.72
-numpy==1.22.4
-pandas==1.4.3
-scikit-learn==1.0.2
-matplotlib==3.5.2
-pillow==9.2.0
-imutils==0.5.4
-streamlit-option-menu==0.3.2
+
+# OpenCV for image processing (headless version for servers)
+opencv-python-headless==4.5.5.64
+
+# NumPy for numerical computations
+numpy
+
+# Additional libraries for visualization and data processing
+pandas
+matplotlib
