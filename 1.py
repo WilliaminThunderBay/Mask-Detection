@@ -7,6 +7,10 @@ from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
 from PIL import Image
 import imutils
+import os
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
+os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "0"
+import cv2
 
 # 设置页面标题
 st.set_page_config(page_title="Dashboard", layout="wide")
