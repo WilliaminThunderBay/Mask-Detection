@@ -1,16 +1,7 @@
-# Streamlit version
 streamlit==1.16.0
-streamlit-option-menu
-
-# TensorFlow version compatible with Python 3.9
-tensorflow==2.9.0
-
-# OpenCV for image processing (headless version for servers)
+streamlit-option-menu==0.4.0
+tensorflow>=2.6.0,<2.18.0  # 兼容 Python 3.7 和 3.9
 opencv-python-headless==4.5.5.64
-
-# NumPy for numerical computations
 numpy
-
-# Additional libraries for visualization and data processing
 pandas
 matplotlib
