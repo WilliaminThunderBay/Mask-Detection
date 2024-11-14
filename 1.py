@@ -21,6 +21,7 @@ with st.sidebar:
         default_index=0,
     )
 
+
 # 定义口罩检测函数
 def detect_and_predict_mask(image, faceNet, maskNet):
     (h, w) = image.shape[:2]
@@ -31,29 +32,42 @@ def detect_and_predict_mask(image, faceNet, maskNet):
     faces = []
     locs = []
     preds = []
+    conf_threshold = 0.3  # 检测置信度阈值
+    nms_threshold = 0.4  # NMS阈值
+
+    boxes = []
+    confidences = []
 
     for i in range(0, detections.shape[2]):
         confidence = detections[0, 0, i, 2]
-        if confidence > 0.5:
+        if confidence > conf_threshold:
             box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
             (startX, startY, endX, endY) = box.astype("int")
             (startX, startY) = (max(0, startX), max(0, startY))
             (endX, endY) = (min(w - 1, endX), min(h - 1, endY))
+            boxes.append([startX, startY, endX - startX, endY - startY])
+            confidences.append(float(confidence))
 
-            face = image[startY:endY, startX:endX]
-            face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
-            face = cv2.resize(face, (224, 224))
-            face = img_to_array(face)
-            face = preprocess_input(face)
+    indices = cv2.dnn.NMSBoxes(boxes, confidences, conf_threshold, nms_threshold)
+    for i in indices.flatten():
+        (startX, startY, width, height) = boxes[i]
+        endX, endY = startX + width, startY + height
 
-            faces.append(face)
-            locs.append((startX, startY, endX, endY))
+        face = image[startY:endY, startX:endX]
+        face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
+        face = cv2.resize(face, (224, 224))
+        face = img_to_array(face)
+        face = preprocess_input(face)
+
+        faces.append(face)
+        locs.append((startX, startY, endX, endY))
 
     if len(faces) > 0:
         faces = np.array(faces, dtype="float32")
         preds = maskNet.predict(faces, batch_size=32)
 
     return (locs, preds)
+
 
 # 加载模型
 @st.cache(allow_output_mutation=True)
@@ -71,6 +85,7 @@ def load_models():
         st.stop()
     maskNet = load_model(mask_model_path)
     return faceNet, maskNet
+
 
 faceNet, maskNet = load_models()
 
@@ -127,6 +142,7 @@ elif selected == "Real-time Camera Detection":
     st.title("Real-time Camera Detection")
     st.write("Use your camera to detect masks in real time.")
 
+
     class MaskDetectionTransformer(VideoTransformerBase):
         def transform(self, frame):
             image = frame.to_ndarray(format="bgr24")
@@ -145,36 +161,18 @@ elif selected == "Real-time Camera Detection":
 
             return image
 
+
     rtc_configuration = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
 
-    # 自定义按钮样式
-    st.markdown(
-        """
-        <style>
-        .custom-button {
-            font-size: 20px;
-            font-weight: bold;
-            color: #FFFFFF;
-            background-color: #FF5733;
-            border-radius: 10px;
-            padding: 10px 20px;
-            cursor: pointer;
-            text-align: center;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
+    webrtc_ctx = webrtc_streamer(
+        key="mask-detection",
+        video_transformer_factory=MaskDetectionTransformer,
+        rtc_configuration=rtc_configuration,
+        media_stream_constraints={"video": True, "audio": False},
     )
 
-    if st.button("Start Real-Time Detection"):
-        webrtc_ctx = webrtc_streamer(
-            key="mask-detection",
-            video_transformer_factory=MaskDetectionTransformer,
-            rtc_configuration=rtc_configuration,
-            media_stream_constraints={"video": True, "audio": False},
-        )
+    if webrtc_ctx.video_processor:
+        st.success("Real-time mask detection started!")
+    else:
+        st.warning("Please Click 'Select Device' to enable your camera first!!!!")
 
-        if webrtc_ctx.video_processor:
-            st.success("Real-time mask detection started!")
-        else:
-            st.warning("Click 'Select Device' to enable your camera.")
