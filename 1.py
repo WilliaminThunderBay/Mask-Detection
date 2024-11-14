@@ -21,6 +21,23 @@ with st.sidebar:
         default_index=0,
     )
 
+# 动态调整框和文字的大小
+def adjust_font_and_box_size(image):
+    # 获取图片分辨率
+    height, width = image.shape[:2]
+    resolution = height * width
+
+    # 根据分辨率动态调整大小
+    if resolution > 1024 * 768:  # 高分辨率
+        font_scale = 2.0
+        font_thickness = 8
+        box_thickness = 8
+    else:  # 低分辨率
+        font_scale = 1.0
+        font_thickness = 2
+        box_thickness = 2
+
+    return font_scale, font_thickness, box_thickness
 
 # 定义口罩检测函数
 def detect_and_predict_mask(image, faceNet, maskNet):
@@ -33,11 +50,12 @@ def detect_and_predict_mask(image, faceNet, maskNet):
     locs = []
     preds = []
     conf_threshold = 0.3  # 检测置信度阈值
-    nms_threshold = 0.4  # NMS阈值
+    nms_threshold = 0.4   # NMS阈值
 
     boxes = []
     confidences = []
 
+    # 遍历检测到的对象
     for i in range(0, detections.shape[2]):
         confidence = detections[0, 0, i, 2]
         if confidence > conf_threshold:
@@ -48,6 +66,7 @@ def detect_and_predict_mask(image, faceNet, maskNet):
             boxes.append([startX, startY, endX - startX, endY - startY])
             confidences.append(float(confidence))
 
+    # 非最大值抑制
     indices = cv2.dnn.NMSBoxes(boxes, confidences, conf_threshold, nms_threshold)
     for i in indices.flatten():
         (startX, startY, width, height) = boxes[i]
@@ -68,7 +87,6 @@ def detect_and_predict_mask(image, faceNet, maskNet):
 
     return (locs, preds)
 
-
 # 加载模型
 @st.cache(allow_output_mutation=True)
 def load_models():
@@ -85,7 +103,6 @@ def load_models():
         st.stop()
     maskNet = load_model(mask_model_path)
     return faceNet, maskNet
-
 
 faceNet, maskNet = load_models()
 
@@ -121,6 +138,9 @@ elif selected == "Image Mask Detection":
         with col1:
             st.image(image[:, :, ::-1], channels="RGB", caption="Original Image", use_column_width=True)
 
+        # 获取动态调整的字体和框粗细
+        font_scale, font_thickness, box_thickness = adjust_font_and_box_size(image)
+
         (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
 
         for (box, pred) in zip(locs, preds):
@@ -131,8 +151,9 @@ elif selected == "Image Mask Detection":
             color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
             label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 
-            cv2.putText(image, label, (startX, startY - 20), cv2.FONT_HERSHEY_SIMPLEX, 2.0, color, 8)
-            cv2.rectangle(image, (startX, startY), (endX, endY), color, 8)
+            # 使用动态调整的字体和框粗细
+            cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness)
+            cv2.rectangle(image, (startX, startY), (endX, endY), color, box_thickness)
 
         with col2:
             st.image(image[:, :, ::-1], channels="RGB", caption="Prediction Image", use_column_width=True)
@@ -142,11 +163,13 @@ elif selected == "Real-time Camera Detection":
     st.title("Real-time Camera Detection")
     st.write("Use your camera to detect masks in real time.")
 
-
     class MaskDetectionTransformer(VideoTransformerBase):
         def transform(self, frame):
             image = frame.to_ndarray(format="bgr24")
             (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
+
+            # 获取动态调整的字体和框粗细
+            font_scale, font_thickness, box_thickness = adjust_font_and_box_size(image)
 
             for (box, pred) in zip(locs, preds):
                 (startX, startY, endX, endY) = box
@@ -156,11 +179,10 @@ elif selected == "Real-time Camera Detection":
                 color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
                 label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 
-                cv2.putText(image, label, (startX, startY - 20), cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, 6)
-                cv2.rectangle(image, (startX, startY), (endX, endY), color, 8)
+                cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness)
+                cv2.rectangle(image, (startX, startY), (endX, endY), color, box_thickness)
 
             return image
-
 
     rtc_configuration = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
 
@@ -174,5 +196,4 @@ elif selected == "Real-time Camera Detection":
     if webrtc_ctx.video_processor:
         st.success("Real-time mask detection started!")
     else:
-        st.warning("Please Click 'Select Device' to enable your camera first!!!!")
-
+        st.warning("Click 'Select Device' to enable your camera.")
