@@ -9,8 +9,8 @@ matplotlib==3.5.1
 scipy==1.7.3
 
 # Machine learning and deep learning
-tensorflow==2.9.3
-keras==2.9.0
+tensorflow==2.10.0
+keras==2.10.0
 h5py==3.1.0
 
 # Computer Vision
@@ -20,7 +20,7 @@ imutils==0.5.3
 # Utilities
 requests==2.31.0
 pyyaml==6.0.1
-protobuf==3.19.6  # Pin to a version compatible with TensorFlow 2.9.3
+protobuf>=3.20,<5  # Update protobuf to be compatible with Streamlit
 python-dateutil==2.9.0
 pillow==9.5.0
 
