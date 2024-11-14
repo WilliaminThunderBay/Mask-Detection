@@ -7,7 +7,7 @@ from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
 import imutils
 import os
-from threading import Lock
+import time
 
 # 设置页面标题
 st.set_page_config(page_title="Mask Detection Dashboard", layout="wide")
@@ -75,8 +75,6 @@ def load_models():
 
 faceNet, maskNet = load_models()
 
-camera_lock = Lock()
-
 # About 页面
 if selected == "About":
     st.title("About")
@@ -134,37 +132,41 @@ elif selected == "Real-time Camera Detection":
         st.session_state["camera_running"] = False
 
     def start_camera():
-        with camera_lock:
-            st.session_state["camera_running"] = True
-            video_capture = cv2.VideoCapture(0)
-            if not video_capture.isOpened():
-                st.error("Failed to access the camera.")
-                return
+        st.session_state["camera_running"] = True
+        video_capture = cv2.VideoCapture(0)
+        
+        if not video_capture.isOpened():
+            st.error("Failed to access the camera. Ensure it is connected and not in use.")
+            return
 
-            camera_placeholder = st.empty()
-            while st.session_state["camera_running"]:
-                ret, frame = video_capture.read()
-                if not ret:
-                    st.error("Failed to capture a frame.")
-                    break
+        st.success("Camera started successfully!")
+        placeholder = st.empty()
 
-                frame = imutils.resize(frame, width=800)
-                (locs, preds) = detect_and_predict_mask(frame, faceNet, maskNet)
+        while st.session_state["camera_running"]:
+            ret, frame = video_capture.read()
+            if not ret:
+                st.error("Failed to capture a frame. Stopping...")
+                break
 
-                for (box, pred) in zip(locs, preds):
-                    (startX, startY, endX, endY) = box
-                    (mask, withoutMask) = pred
+            frame = imutils.resize(frame, width=800)
+            (locs, preds) = detect_and_predict_mask(frame, faceNet, maskNet)
 
-                    label = "Mask" if mask > withoutMask else "No Mask"
-                    color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
-                    label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
+            for (box, pred) in zip(locs, preds):
+                (startX, startY, endX, endY) = box
+                (mask, withoutMask) = pred
 
-                    cv2.putText(frame, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
-                    cv2.rectangle(frame, (startX, startY), (endX, endY), color, 2)
+                label = "Mask" if mask > withoutMask else "No Mask"
+                color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+                label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 
-                camera_placeholder.image(frame[:, :, ::-1], channels="RGB")
+                cv2.putText(frame, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
+                cv2.rectangle(frame, (startX, startY), (endX, endY), color, 2)
 
-            video_capture.release()
+            placeholder.image(frame[:, :, ::-1], channels="RGB")
+            time.sleep(0.1)
+
+        video_capture.release()
+        placeholder.empty()
 
     def stop_camera():
         st.session_state["camera_running"] = False
@@ -172,7 +174,8 @@ elif selected == "Real-time Camera Detection":
     col1, col2 = st.columns(2)
     with col1:
         if st.button("Start Camera"):
-            start_camera()
+            if not st.session_state["camera_running"]:
+                start_camera()
     with col2:
         if st.button("Stop Camera"):
             stop_camera()
