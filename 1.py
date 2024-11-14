@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, RTCConfiguration
 import cv2
 import numpy as np
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
@@ -127,6 +127,7 @@ elif selected == "Real-time Camera Detection":
     st.title("Real-time Camera Detection")
     st.write("Use your camera to detect masks in real time.")
 
+    # 定义实时检测逻辑
     class MaskDetectionTransformer(VideoTransformerBase):
         def transform(self, frame):
             image = frame.to_ndarray(format="bgr24")
@@ -145,8 +146,13 @@ elif selected == "Real-time Camera Detection":
 
             return image
 
+    # WebRTC 配置
+    rtc_configuration = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
+
+    # 启动 WebRTC
     webrtc_streamer(
         key="mask-detection",
         video_transformer_factory=MaskDetectionTransformer,
+        rtc_configuration=rtc_configuration,
         media_stream_constraints={"video": True, "audio": False},
     )
