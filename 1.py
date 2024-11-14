@@ -1,66 +1,112 @@
 import streamlit as st
+from streamlit_option_menu import option_menu
 from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
-import av
 import cv2
 import numpy as np
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
+import os
 
 # 设置页面标题
-st.set_page_config(page_title="Mask Detection via WebRTC", layout="wide")
+st.set_page_config(page_title="Mask Detection Dashboard", layout="wide")
+
+# 侧边栏导航
+with st.sidebar:
+    selected = option_menu(
+        "Mask Detection",
+        ["About", "Result", "Image Mask Detection", "Real-time Camera Detection"],
+        icons=["info", "bar-chart", "image", "camera"],
+        menu_icon="cast",
+        default_index=0,
+    )
+
+# 定义口罩检测函数
+def detect_and_predict_mask(image, faceNet, maskNet):
+    (h, w) = image.shape[:2]
+    blob = cv2.dnn.blobFromImage(image, 1.0, (224, 224), (104.0, 177.0, 123.0))
+    faceNet.setInput(blob)
+    detections = faceNet.forward()
+
+    faces = []
+    locs = []
+    preds = []
+
+    for i in range(0, detections.shape[2]):
+        confidence = detections[0, 0, i, 2]
+        if confidence > 0.5:
+            box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+            (startX, startY, endX, endY) = box.astype("int")
+            (startX, startY) = (max(0, startX), max(0, startY))
+            (endX, endY) = (min(w - 1, endX), min(h - 1, endY))
+
+            face = image[startY:endY, startX:endX]
+            face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
+            face = cv2.resize(face, (224, 224))
+            face = img_to_array(face)
+            face = preprocess_input(face)
+
+            faces.append(face)
+            locs.append((startX, startY, endX, endY))
+
+    if len(faces) > 0:
+        faces = np.array(faces, dtype="float32")
+        preds = maskNet.predict(faces, batch_size=32)
+
+    return (locs, preds)
 
 # 加载模型
-@st.cache_resource
+@st.cache(allow_output_mutation=True)
 def load_models():
     prototxtPath = "./face_detector/deploy.prototxt"
     weightsPath = "./face_detector/res10_300x300_ssd_iter_140000.caffemodel"
+    if not os.path.exists(prototxtPath) or not os.path.exists(weightsPath):
+        st.error(f"Face detection model files not found at {prototxtPath} or {weightsPath}!")
+        st.stop()
     faceNet = cv2.dnn.readNet(prototxtPath, weightsPath)
-    maskNet = load_model("mask_detector.h5")
+
+    mask_model_path = "mask_detector.h5"
+    if not os.path.exists(mask_model_path):
+        st.error(f"Mask detection model not found at {mask_model_path}!")
+        st.stop()
+    maskNet = load_model(mask_model_path)
     return faceNet, maskNet
 
 faceNet, maskNet = load_models()
 
-# 定义视频帧处理器
-class MaskDetectionTransformer(VideoTransformerBase):
-    def __init__(self):
-        self.faceNet = faceNet
-        self.maskNet = maskNet
+# About 页面
+if selected == "About":
+    st.title("About")
+    st.write("""
+    Welcome to the **Mask Detection Dashboard**! This platform demonstrates 
+    mask detection functionalities using image uploads and real-time camera feeds.
+    """)
 
-    def _detect_and_predict_mask(self, frame):
-        (h, w) = frame.shape[:2]
-        blob = cv2.dnn.blobFromImage(frame, 1.0, (224, 224), (104.0, 177.0, 123.0))
-        self.faceNet.setInput(blob)
-        detections = self.faceNet.forward()
+# Result 页面
+elif selected == "Result":
+    st.title("Result")
+    st.write("Below are the results of experiments conducted on various datasets.")
+    if os.path.exists("plot.png"):
+        st.image("plot.png", caption="Training Progress", use_column_width=True)
+    else:
+        st.warning("Training result image not found!")
 
-        faces = []
-        locs = []
-        preds = []
+# Image Mask Detection 页面
+elif selected == "Image Mask Detection":
+    st.title("Image Mask Detection")
+    st.write("Upload an image below to detect masks:")
 
-        for i in range(0, detections.shape[2]):
-            confidence = detections[0, 0, i, 2]
-            if confidence > 0.5:
-                box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-                (startX, startY, endX, endY) = box.astype("int")
-                (startX, startY) = (max(0, startX), max(0, startY))
-                (endX, endY) = (min(w - 1, endX), min(h - 1, endY))
+    uploaded_file = st.file_uploader("Choose an image file", type=["jpg", "png", "jpeg"])
+    if uploaded_file is not None:
+        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+        image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
 
-                face = frame[startY:endY, startX:endX]
-                face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
-                face = cv2.resize(face, (224, 224))
-                face = np.array(face, dtype="float32")
-                face = face / 255.0
+        col1, col2 = st.columns(2)
 
-                faces.append(face)
-                locs.append((startX, startY, endX, endY))
+        with col1:
+            st.image(image[:, :, ::-1], channels="RGB", caption="Original Image", use_column_width=True)
 
-        if len(faces) > 0:
-            faces = np.array(faces, dtype="float32")
-            preds = self.maskNet.predict(faces, batch_size=32)
-
-        return (locs, preds)
-
-    def transform(self, frame):
-        img = frame.to_ndarray(format="bgr24")
-        (locs, preds) = self._detect_and_predict_mask(img)
+        (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
 
         for (box, pred) in zip(locs, preds):
             (startX, startY, endX, endY) = box
@@ -70,19 +116,37 @@ class MaskDetectionTransformer(VideoTransformerBase):
             color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
             label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 
-            cv2.putText(img, label, (startX, startY - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
-            cv2.rectangle(img, (startX, startY), (endX, endY), color, 2)
+            cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
+            cv2.rectangle(image, (startX, startY), (endX, endY), color, 2)
 
-        return av.VideoFrame.from_ndarray(img, format="bgr24")
+        with col2:
+            st.image(image[:, :, ::-1], channels="RGB", caption="Prediction Image", use_column_width=True)
 
+# Real-time Camera Detection 页面
+elif selected == "Real-time Camera Detection":
+    st.title("Real-time Camera Detection")
+    st.write("Use your camera to detect masks in real time via browser.")
 
-# 页面布局
-st.title("Real-time Mask Detection via Browser")
-st.write("Use your camera to detect masks in real time.")
+    class MaskDetectionTransformer(VideoTransformerBase):
+        def transform(self, frame):
+            image = frame.to_ndarray(format="bgr24")
+            (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
 
-webrtc_streamer(
-    key="mask-detection",
-    video_transformer_factory=MaskDetectionTransformer,
-    media_stream_constraints={"video": True, "audio": False},
-)
+            for (box, pred) in zip(locs, preds):
+                (startX, startY, endX, endY) = box
+                (mask, withoutMask) = pred
+
+                label = "Mask" if mask > withoutMask else "No Mask"
+                color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+                label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
+
+                cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
+                cv2.rectangle(image, (startX, startY), (endX, endY), color, 2)
+
+            return frame
+
+    webrtc_streamer(
+        key="mask-detection",
+        video_transformer_factory=MaskDetectionTransformer,
+        media_stream_constraints={"video": True, "audio": False},
+    )
