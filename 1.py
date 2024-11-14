@@ -106,6 +106,7 @@ elif selected == "Result":
         st.image("plot.png", caption="Training Progress", use_column_width=True)
     else:
         st.warning("Training result image not found!")
+
 # Image Mask Detection 页面
 if selected == "Image Mask Detection":
     st.title("Image Mask Detection")
@@ -115,17 +116,32 @@ if selected == "Image Mask Detection":
     gallery_images = [f"{i:02d}.jpg" for i in range(1, 8)]
     selected_image = None
 
-    cols = st.columns(len(gallery_images))  # 动态生成列
-    for idx, image_name in enumerate(gallery_images):
-        image_path = os.path.join("./", image_name)
-        if os.path.exists(image_path):
-            thumbnail = cv2.imread(image_path)
-            thumbnail = cv2.cvtColor(thumbnail, cv2.COLOR_BGR2RGB)  # 转换为RGB格式
-            thumbnail = cv2.resize(thumbnail, (100, 100))  # 统一尺寸
-            with cols[idx % len(cols)]:
-                if st.button(f"Select {image_name}", key=image_name):
-                    selected_image = image_name
-                st.image(thumbnail, caption=image_name, use_column_width=True)
+    # 表格头部
+    st.markdown("### Image Gallery")
+    col_titles = st.columns([1, 2, 2])  # 三列：序号、缩略图、选择
+    with col_titles[0]:
+        st.markdown("**No.**")
+    with col_titles[1]:
+        st.markdown("**Preview**")
+    with col_titles[2]:
+        st.markdown("**Action**")
+
+    for idx, image_name in enumerate(gallery_images, start=1):
+        cols = st.columns([1, 2, 2])  # 动态生成列
+        with cols[0]:
+            st.write(idx)
+        with cols[1]:
+            image_path = os.path.join("./", image_name)
+            if os.path.exists(image_path):
+                thumbnail = cv2.imread(image_path)
+                thumbnail = cv2.cvtColor(thumbnail, cv2.COLOR_BGR2RGB)  # 转换为RGB格式
+                thumbnail = cv2.resize(thumbnail, (50, 50))  # 缩略图尺寸 50x50
+                st.image(thumbnail, caption=image_name, use_column_width=False)
+            else:
+                st.write("Not found")
+        with cols[2]:
+            if st.button(f"Select {image_name}", key=image_name):
+                selected_image = image_name
 
     # 上传图片
     st.write("**OR upload your own image:**")
