@@ -20,7 +20,6 @@ imutils==0.5.3
 # Utilities
 requests==2.31.0
 pyyaml==6.0.1
-protobuf>=3.20,<5  # Update protobuf to be compatible with Streamlit
 python-dateutil==2.9.0
 pillow==9.5.0
 
