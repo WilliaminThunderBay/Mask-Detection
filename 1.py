@@ -69,6 +69,26 @@ def detect_and_predict_mask(image, faceNet, maskNet):
 
     return (locs, preds)
 
+# 动态绘制检测框和标签的函数
+def draw_labels(image, locs, preds):
+    (h, w) = image.shape[:2]
+    for (box, pred) in zip(locs, preds):
+        (startX, startY, endX, endY) = box
+        (mask, withoutMask) = pred
+
+        # 动态调整文字大小和框的粗细
+        font_scale = max(0.5, (w / 1000))  # 根据图片宽度动态调整字体大小
+        thickness = max(2, int(w / 500))  # 根据图片宽度动态调整框的粗细
+
+        label = "Mask" if mask > withoutMask else "No Mask"
+        color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+        label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
+
+        cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, thickness)
+        cv2.rectangle(image, (startX, startY), (endX, endY), color, thickness)
+
+    return image
+
 # 加载模型
 @st.cache(allow_output_mutation=True)
 def load_models():
@@ -121,17 +141,7 @@ elif selected == "Image Mask Detection":
             st.image(image[:, :, ::-1], channels="RGB", caption="Original Image", use_column_width=True)
 
         (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
-
-        for (box, pred) in zip(locs, preds):
-            (startX, startY, endX, endY) = box
-            (mask, withoutMask) = pred
-
-            label = "Mask" if mask > withoutMask else "No Mask"
-            color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
-            label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
-
-            cv2.putText(image, label, (startX, startY - 20), cv2.FONT_HERSHEY_SIMPLEX, 2, color, 10)
-            cv2.rectangle(image, (startX, startY), (endX, endY), color, 10)
+        image = draw_labels(image, locs, preds)
 
         with col2:
             st.image(image[:, :, ::-1], channels="RGB", caption="Prediction Image", use_column_width=True)
@@ -145,18 +155,7 @@ elif selected == "Real-time Camera Detection":
         def transform(self, frame):
             image = frame.to_ndarray(format="bgr24")
             (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
-
-            for (box, pred) in zip(locs, preds):
-                (startX, startY, endX, endY) = box
-                (mask, withoutMask) = pred
-
-                label = "Mask" if mask > withoutMask else "No Mask"
-                color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
-                label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
-
-                cv2.putText(image, label, (startX, startY - 20), cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, 5)
-                cv2.rectangle(image, (startX, startY), (endX, endY), color, 5)
-
+            image = draw_labels(image, locs, preds)
             return image
 
     rtc_configuration = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
