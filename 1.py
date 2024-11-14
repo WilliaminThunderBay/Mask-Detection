@@ -6,6 +6,7 @@ import numpy as np
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
+import imutils
 import os
 
 # 设置页面标题
@@ -55,6 +56,7 @@ def detect_and_predict_mask(image, faceNet, maskNet):
 
     return (locs, preds)
 
+
 # 加载模型
 @st.cache(allow_output_mutation=True)
 def load_models():
@@ -71,6 +73,7 @@ def load_models():
         st.stop()
     maskNet = load_model(mask_model_path)
     return faceNet, maskNet
+
 
 faceNet, maskNet = load_models()
 
@@ -129,8 +132,9 @@ elif selected == "Real-time Camera Detection":
 
     class MaskDetectionTransformer(VideoTransformerBase):
         def transform(self, frame):
-            image = frame.to_ndarray(format="bgr24")
-            (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
+            img = frame.to_ndarray(format="bgr24")
+            img = imutils.resize(img, width=800)
+            (locs, preds) = detect_and_predict_mask(img, faceNet, maskNet)
 
             for (box, pred) in zip(locs, preds):
                 (startX, startY, endX, endY) = box
@@ -140,10 +144,10 @@ elif selected == "Real-time Camera Detection":
                 color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
                 label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 
-                cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
-                cv2.rectangle(image, (startX, startY), (endX, endY), color, 2)
+                cv2.putText(img, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
+                cv2.rectangle(img, (startX, startY), (endX, endY), color, 2)
 
-            return frame
+            return img
 
     webrtc_streamer(
         key="mask-detection",
