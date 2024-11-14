@@ -128,8 +128,9 @@ elif selected == "Image Mask Detection":
 # Real-time Camera Detection 页面
 elif selected == "Real-time Camera Detection":
     st.title("Real-time Camera Detection")
-    st.write("Use your camera to detect masks in real time via browser.")
+    st.write("Use your camera to detect masks in real time.")
 
+    # 浏览器方式
     class MaskDetectionTransformer(VideoTransformerBase):
         def transform(self, frame):
             img = frame.to_ndarray(format="bgr24")
@@ -149,8 +150,44 @@ elif selected == "Real-time Camera Detection":
 
             return img
 
-    webrtc_streamer(
-        key="mask-detection",
-        video_transformer_factory=MaskDetectionTransformer,
-        media_stream_constraints={"video": True, "audio": False},
-    )
+    # 本地方式
+    def start_camera():
+        video_capture = cv2.VideoCapture(0)
+        while True:
+            ret, frame = video_capture.read()
+            if not ret:
+                st.write("Failed to grab frame")
+                break
+
+            frame = imutils.resize(frame, width=800)
+            (locs, preds) = detect_and_predict_mask(frame, faceNet, maskNet)
+
+            for (box, pred) in zip(locs, preds):
+                (startX, startY, endX, endY) = box
+                (mask, withoutMask) = pred
+
+                label = "Mask" if mask > withoutMask else "No Mask"
+                color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+                label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
+
+                cv2.putText(frame, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
+                cv2.rectangle(frame, (startX, startY), (endX, endY), color, 2)
+
+            cv2.imshow("Real-time Mask Detection", frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+        video_capture.release()
+        cv2.destroyAllWindows()
+
+    # 按钮选择
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Start Browser Camera"):
+            webrtc_streamer(
+                key="mask-detection",
+                video_transformer_factory=MaskDetectionTransformer,
+                media_stream_constraints={"video": True, "audio": False},
+            )
+    with col2:
+        if st.button("Start Local Camera"):
+            start_camera()
