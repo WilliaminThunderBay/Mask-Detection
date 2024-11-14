@@ -37,7 +37,6 @@ def detect_and_predict_mask(image, faceNet, maskNet):
     boxes = []
     confidences = []
 
-    # 遍历检测到的对象
     for i in range(0, detections.shape[2]):
         confidence = detections[0, 0, i, 2]
         if confidence > conf_threshold:
@@ -48,7 +47,6 @@ def detect_and_predict_mask(image, faceNet, maskNet):
             boxes.append([startX, startY, endX - startX, endY - startY])
             confidences.append(float(confidence))
 
-    # 非最大值抑制
     indices = cv2.dnn.NMSBoxes(boxes, confidences, conf_threshold, nms_threshold)
     for i in indices.flatten():
         (startX, startY, width, height) = boxes[i]
@@ -140,6 +138,28 @@ elif selected == "Image Mask Detection":
 elif selected == "Real-time Camera Detection":
     st.title("Real-time Camera Detection")
     st.write("Use your camera to detect masks in real time.")
+
+    # 定义醒目的 Select Device 按钮
+    st.markdown("""
+    <style>
+    .select-device-button {
+        background-color: #FF5722;
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin-bottom: 10px;
+        text-align: center;
+        transition: background-color 0.3s ease;
+    }
+    .select-device-button:hover {
+        background-color: #E64A19;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="select-device-button">Select Device</div>', unsafe_allow_html=True)
 
     class MaskDetectionTransformer(VideoTransformerBase):
         def transform(self, frame):
