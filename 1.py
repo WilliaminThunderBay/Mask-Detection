@@ -69,22 +69,22 @@ def detect_and_predict_mask(image, faceNet, maskNet):
 
     return (locs, preds)
 
-# 动态绘制检测框和标签的函数
+# 强制提升文字和框的粗度
 def draw_labels(image, locs, preds):
     (h, w) = image.shape[:2]
     for (box, pred) in zip(locs, preds):
         (startX, startY, endX, endY) = box
         (mask, withoutMask) = pred
 
-        # 动态调整文字大小和框的粗细
-        font_scale = max(0.5, (w / 1000))  # 根据图片宽度动态调整字体大小
-        thickness = max(2, int(w / 500))  # 根据图片宽度动态调整框的粗细
+        # 强制设置文字大小和框的粗度
+        font_scale = max(1.5, (w / 800))  # 增强字体大小
+        thickness = max(10, int(w / 200))  # 增强框的粗细
 
         label = "Mask" if mask > withoutMask else "No Mask"
         color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
         label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 
-        cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, thickness)
+        cv2.putText(image, label, (startX, startY - 20), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, thickness)
         cv2.rectangle(image, (startX, startY), (endX, endY), color, thickness)
 
     return image
