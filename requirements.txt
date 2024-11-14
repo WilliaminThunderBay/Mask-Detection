@@ -28,7 +28,7 @@ python-dateutil==2.9.0
 pillow==9.5.0
 
 # Additional dependencies
-streamlit==1.25.0
+
 streamlit-webrtc==0.45.0
 numpy==1.21.6
 tensorflow==2.9.3
