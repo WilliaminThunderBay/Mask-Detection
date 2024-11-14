@@ -177,3 +177,42 @@ if selected == "Image Mask Detection":
 
         with col2:
             st.image(image[:, :, ::-1], caption="Prediction Image", use_column_width=True)
+# Real-time Camera Detection 页面
+elif selected == "Real-time Camera Detection":
+    st.title("Real-time Camera Detection")
+    st.write("Use your camera to detect masks in real time.")
+
+    class MaskDetectionTransformer(VideoTransformerBase):
+        def transform(self, frame):
+            image = frame.to_ndarray(format="bgr24")
+            (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
+
+            # 获取动态调整的字体和框粗细
+            font_scale, font_thickness, box_thickness = adjust_font_and_box_size(image)
+
+            for (box, pred) in zip(locs, preds):
+                (startX, startY, endX, endY) = box
+                (mask, withoutMask) = pred
+
+                label = "Mask" if mask > withoutMask else "No Mask"
+                color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+                label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
+
+                cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness)
+                cv2.rectangle(image, (startX, startY), (endX, endY), color, box_thickness)
+
+            return image
+
+    rtc_configuration = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
+
+    webrtc_ctx = webrtc_streamer(
+        key="mask-detection",
+        video_transformer_factory=MaskDetectionTransformer,
+        rtc_configuration=rtc_configuration,
+        media_stream_constraints={"video": True, "audio": False},
+    )
+
+    if webrtc_ctx.video_processor:
+        st.success("Real-time mask detection started!")
+    else:
+        st.warning("Click 'Select Device' to enable your camera.")
