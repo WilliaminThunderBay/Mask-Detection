@@ -118,7 +118,7 @@ elif selected == "Image Mask Detection":
 
             # 修改框和文字的样式
             cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 2.5, color, 15)  # 大文字了
-            cv2.rectangle(image, (startX, startY), (endX, endY), color, 100)  # 粗的框
+            cv2.rectangle(image, (startX, startY), (endX, endY), color, 20)  # 粗的框
 
         with col2:
             st.image(image[:, :, ::-1], channels="RGB", caption="Prediction Image", use_column_width=True)
@@ -143,8 +143,8 @@ elif selected == "Real-time Camera Detection":
                 label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 
                 # 修改框和文字的样式
-                cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 2.0, color, 5)  # 更大的文字
-                cv2.rectangle(image, (startX, startY), (endX, endY), color, 5)  # 更粗的框
+                cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 2.5, color, 10)  # 更大的文字
+                cv2.rectangle(image, (startX, startY), (endX, endY), color, 15)  # 更粗的框
 
             return image
 
