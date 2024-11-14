@@ -1,7 +1,5 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
-import av
 import cv2
 import numpy as np
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
@@ -16,7 +14,7 @@ st.set_page_config(page_title="Mask Detection Dashboard", layout="wide")
 with st.sidebar:
     selected = option_menu(
         "Mask Detection",
-        ["About", "Result", "Image Mask Detection", "Real-time Camera Detection"],
+        ["About", "Result", "Image Mask Detection", "Real-time Upload Detection"],
         icons=["info", "bar-chart", "image", "camera"],
         menu_icon="cast",
         default_index=0,
@@ -123,35 +121,27 @@ elif selected == "Image Mask Detection":
         with col2:
             st.image(image[:, :, ::-1], channels="RGB", caption="Prediction Image", use_column_width=True)
 
-# Real-time Camera Detection 页面
-elif selected == "Real-time Camera Detection":
-    st.title("Real-time Camera Detection")
-    st.write("Use your camera to detect masks in real time via browser.")
+# Real-time Upload Detection 页面
+elif selected == "Real-time Upload Detection":
+    st.title("Real-time Camera Detection (via Frame Upload)")
+    st.write("Upload camera frames to detect masks in real time:")
 
-    class MaskDetectionTransformer(VideoTransformerBase):
-        def transform(self, frame):
-            try:
-                image = frame.to_ndarray(format="bgr24")
-                (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
+    uploaded_frame = st.file_uploader("Upload a frame (jpg/png/jpeg)", type=["jpg", "png", "jpeg"])
+    if uploaded_frame is not None:
+        frame_bytes = np.asarray(bytearray(uploaded_frame.read()), dtype=np.uint8)
+        frame = cv2.imdecode(frame_bytes, cv2.IMREAD_COLOR)
 
-                for (box, pred) in zip(locs, preds):
-                    (startX, startY, endX, endY) = box
-                    (mask, withoutMask) = pred
+        (locs, preds) = detect_and_predict_mask(frame, faceNet, maskNet)
 
-                    label = "Mask" if mask > withoutMask else "No Mask"
-                    color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
-                    label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
+        for (box, pred) in zip(locs, preds):
+            (startX, startY, endX, endY) = box
+            (mask, withoutMask) = pred
 
-                    cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
-                    cv2.rectangle(image, (startX, startY), (endX, endY), color, 2)
+            label = "Mask" if mask > withoutMask else "No Mask"
+            color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+            label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 
-                return av.VideoFrame.from_ndarray(image, format="bgr24")
-            except Exception as e:
-                st.error(f"Error during transform: {e}")
-                return frame
+            cv2.putText(frame, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
+            cv2.rectangle(frame, (startX, startY), (endX, endY), color, 2)
 
-    webrtc_streamer(
-        key="mask-detection",
-        video_transformer_factory=MaskDetectionTransformer,
-        media_stream_constraints={"video": True, "audio": False},
-    )
+        st.image(frame[:, :, ::-1], channels="RGB", caption="Real-time Detection Frame", use_column_width=True)
