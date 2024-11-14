@@ -1,6 +1,5 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, RTCConfiguration
 import cv2
 import numpy as np
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
@@ -100,40 +99,28 @@ def load_models():
 
 faceNet, maskNet = load_models()
 
-# About 页面
-if selected == "About":
-    st.title("About")
-    st.write("""
-    Welcome to the **Mask Detection Dashboard**! This platform demonstrates 
-    mask detection functionalities using image uploads and real-time camera feeds.
-    """)
-# Result 页面
-elif selected == "Result":
-    st.title("Result")
-    st.write("Below are the results of experiments conducted on various datasets.")
-    if os.path.exists("plot.png"):
-        st.image("plot.png", caption="Training Progress", use_column_width=True)
-    else:
-        st.warning("Training result image not found!")
 # Image Mask Detection 页面
-elif selected == "Image Mask Detection":
+if selected == "Image Mask Detection":
     st.title("Image Mask Detection")
-    st.write("Select a preloaded image or upload your own image:")
+    st.write("Select a preloaded image from the list below or upload your own image:")
 
-    # 提供选择的七张照片
-    images = [f"0{i}.jpg" for i in range(1, 8) if os.path.exists(f"0{i}.jpg")]
-    selected_image = st.selectbox("Choose a preloaded image:", images)
+    # 定义可供选择的图片列表
+    image_files = [f"0{i}.jpg" for i in range(1, 8) if os.path.exists(f"0{i}.jpg")]
+    image_files_display = [f"Preloaded Image {i}" for i in range(1, 8) if os.path.exists(f"0{i}.jpg")]
 
-    # 允许用户上传自己的照片
+    # 显示图片列表选择
+    selected_image_index = st.selectbox("Choose an image from the list:", options=list(range(len(image_files_display))), format_func=lambda x: image_files_display[x])
+    selected_image = image_files[selected_image_index]
+
+    # 上传图片选项
     uploaded_file = st.file_uploader("Or upload an image:", type=["jpg", "png", "jpeg"])
 
-    if selected_image or uploaded_file:
-        # 如果用户选择了预加载的图片
-        if selected_image:
-            image = cv2.imread(selected_image)
-        else:  # 用户上传了自己的图片
+    if uploaded_file or selected_image:
+        if uploaded_file:  # 用户上传了自己的图片
             file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
             image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+        else:  # 用户选择了预加载图片
+            image = cv2.imread(selected_image)
 
         col1, col2 = st.columns(2)
 
@@ -157,42 +144,3 @@ elif selected == "Image Mask Detection":
 
         with col2:
             st.image(image[:, :, ::-1], channels="RGB", caption="Prediction Image", use_column_width=True)
-
-# Real-time Camera Detection 页面
-elif selected == "Real-time Camera Detection":
-    st.title("Real-time Camera Detection")
-    st.write("Use your camera to detect masks in real time.")
-
-    class MaskDetectionTransformer(VideoTransformerBase):
-        def transform(self, frame):
-            image = frame.to_ndarray(format="bgr24")
-            (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
-
-            font_scale, font_thickness, box_thickness = adjust_font_and_box_size(image)
-
-            for (box, pred) in zip(locs, preds):
-                (startX, startY, endX, endY) = box
-                (mask, withoutMask) = pred
-
-                label = "Mask" if mask > withoutMask else "No Mask"
-                color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
-                label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
-
-                cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness)
-                cv2.rectangle(image, (startX, startY), (endX, endY), color, box_thickness)
-
-            return image
-
-    rtc_configuration = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
-
-    webrtc_ctx = webrtc_streamer(
-        key="mask-detection",
-        video_transformer_factory=MaskDetectionTransformer,
-        rtc_configuration=rtc_configuration,
-        media_stream_constraints={"video": True, "audio": False},
-    )
-
-    if webrtc_ctx.video_processor:
-        st.success("Real-time mask detection started!")
-    else:
-        st.warning("Click 'Select Device' to enable your camera.")
