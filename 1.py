@@ -125,7 +125,7 @@ elif selected == "Image Mask Detection":
 # Real-time Camera Detection 页面
 elif selected == "Real-time Camera Detection":
     st.title("Real-time Camera Detection")
-    st.write("Use your camera to detect masks in real time via browser.")
+    st.write("Use your camera to detect masks in real time.")
 
     class MaskDetectionTransformer(VideoTransformerBase):
         def transform(self, frame):
@@ -143,7 +143,7 @@ elif selected == "Real-time Camera Detection":
                 cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
                 cv2.rectangle(image, (startX, startY), (endX, endY), color, 2)
 
-            return frame
+            return image
 
     webrtc_streamer(
         key="mask-detection",
