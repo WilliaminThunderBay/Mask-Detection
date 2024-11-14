@@ -7,6 +7,7 @@ from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.models import load_model
 import imutils
 import os
+from threading import Lock
 
 # 设置页面标题
 st.set_page_config(page_title="Mask Detection Dashboard", layout="wide")
@@ -61,18 +62,20 @@ def load_models():
     prototxtPath = "./face_detector/deploy.prototxt"
     weightsPath = "./face_detector/res10_300x300_ssd_iter_140000.caffemodel"
     if not os.path.exists(prototxtPath) or not os.path.exists(weightsPath):
-        st.error("Face detection model files not found! Please check paths.")
+        st.error(f"Face detection model files not found at {prototxtPath} or {weightsPath}!")
         st.stop()
     faceNet = cv2.dnn.readNet(prototxtPath, weightsPath)
 
     mask_model_path = "mask_detector.h5"
     if not os.path.exists(mask_model_path):
-        st.error("Mask detection model not found! Please check the path.")
+        st.error(f"Mask detection model not found at {mask_model_path}!")
         st.stop()
     maskNet = load_model(mask_model_path)
     return faceNet, maskNet
 
 faceNet, maskNet = load_models()
+
+camera_lock = Lock()
 
 # About 页面
 if selected == "About":
@@ -131,33 +134,37 @@ elif selected == "Real-time Camera Detection":
         st.session_state["camera_running"] = False
 
     def start_camera():
-        st.session_state["camera_running"] = True
-        video_capture = cv2.VideoCapture(0)
-        camera_placeholder = st.empty()
-
-        while st.session_state["camera_running"]:
-            ret, frame = video_capture.read()
-            if not ret:
+        with camera_lock:
+            st.session_state["camera_running"] = True
+            video_capture = cv2.VideoCapture(0)
+            if not video_capture.isOpened():
                 st.error("Failed to access the camera.")
-                break
+                return
 
-            frame = imutils.resize(frame, width=800)
-            (locs, preds) = detect_and_predict_mask(frame, faceNet, maskNet)
+            camera_placeholder = st.empty()
+            while st.session_state["camera_running"]:
+                ret, frame = video_capture.read()
+                if not ret:
+                    st.error("Failed to capture a frame.")
+                    break
 
-            for (box, pred) in zip(locs, preds):
-                (startX, startY, endX, endY) = box
-                (mask, withoutMask) = pred
+                frame = imutils.resize(frame, width=800)
+                (locs, preds) = detect_and_predict_mask(frame, faceNet, maskNet)
 
-                label = "Mask" if mask > withoutMask else "No Mask"
-                color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
-                label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
+                for (box, pred) in zip(locs, preds):
+                    (startX, startY, endX, endY) = box
+                    (mask, withoutMask) = pred
 
-                cv2.putText(frame, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
-                cv2.rectangle(frame, (startX, startY), (endX, endY), color, 2)
+                    label = "Mask" if mask > withoutMask else "No Mask"
+                    color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+                    label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 
-            camera_placeholder.image(frame[:, :, ::-1], channels="RGB")
+                    cv2.putText(frame, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
+                    cv2.rectangle(frame, (startX, startY), (endX, endY), color, 2)
 
-        video_capture.release()
+                camera_placeholder.image(frame[:, :, ::-1], channels="RGB")
+
+            video_capture.release()
 
     def stop_camera():
         st.session_state["camera_running"] = False
