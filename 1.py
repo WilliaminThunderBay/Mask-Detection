@@ -216,3 +216,49 @@ elif selected == "Real-time Camera Detection":
         st.success("Real-time mask detection started!")
     else:
         st.warning("Click 'Select Device' to enable your camera.")
+# Real-time Camera Detection 页面
+elif selected == "Real-time Camera Detection":
+    st.title("Real-time Camera Detection")
+    st.write("Use your camera to detect masks in real time.")
+
+    # 定义用于实时检测的转换器类
+    class MaskDetectionTransformer(VideoTransformerBase):
+        def transform(self, frame):
+            image = frame.to_ndarray(format="bgr24")
+            # 检测面部和预测口罩
+            (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
+
+            # 动态调整字体和框粗细
+            font_scale, font_thickness, box_thickness = adjust_font_and_box_size(image)
+
+            for (box, pred) in zip(locs, preds):
+                (startX, startY, endX, endY) = box
+                (mask, withoutMask) = pred
+
+                # 根据检测结果选择标签和颜色
+                label = "Mask" if mask > withoutMask else "No Mask"
+                color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+                label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
+
+                # 绘制标签和框
+                cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness)
+                cv2.rectangle(image, (startX, startY), (endX, endY), color, box_thickness)
+
+            return image
+
+    # WebRTC 配置
+    rtc_configuration = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
+
+    # 启用 WebRTC 进行实时视频流处理
+    webrtc_ctx = webrtc_streamer(
+        key="mask-detection",
+        video_transformer_factory=MaskDetectionTransformer,
+        rtc_configuration=rtc_configuration,
+        media_stream_constraints={"video": True, "audio": False},  # 仅启用视频流
+    )
+
+    # 检查视频处理器是否正常运行
+    if webrtc_ctx.video_processor:
+        st.success("Real-time mask detection started!")
+    else:
+        st.warning("Click 'Select Device' to enable your camera.")
