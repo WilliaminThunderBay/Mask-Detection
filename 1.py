@@ -107,7 +107,14 @@ if selected == "About":
     Welcome to the **Mask Detection Dashboard**! This platform demonstrates 
     mask detection functionalities using image uploads and real-time camera feeds.
     """)
-
+# Result 页面
+elif selected == "Result":
+    st.title("Result")
+    st.write("Below are the results of experiments conducted on various datasets.")
+    if os.path.exists("plot.png"):
+        st.image("plot.png", caption="Training Progress", use_column_width=True)
+    else:
+        st.warning("Training result image not found!")
 # Image Mask Detection 页面
 elif selected == "Image Mask Detection":
     st.title("Image Mask Detection")
