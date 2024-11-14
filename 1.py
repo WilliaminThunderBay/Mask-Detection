@@ -117,7 +117,7 @@ elif selected == "Image Mask Detection":
             label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 
             # 修改框和文字的样式
-            cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 5.0, color, 5)  # 大文字了
+            cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 3.0, color, 10)  # 大文字了
             cv2.rectangle(image, (startX, startY), (endX, endY), color, 10)  # 粗的框
 
         with col2:
