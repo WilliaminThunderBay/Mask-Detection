@@ -25,14 +25,9 @@ def adjust_font_and_box_size(image):
     height, width = image.shape[:2]
     resolution = height * width
     if resolution > 1024 * 768:  # 高分辨率
-        font_scale = 2.0
-        font_thickness = 10
-        box_thickness = 10
+        return 2.0, 10, 10
     else:  # 低分辨率
-        font_scale = 0.5
-        font_thickness = 2
-        box_thickness = 3
-    return font_scale, font_thickness, box_thickness
+        return 0.5, 2, 3
 
 # 定义口罩检测函数
 def detect_and_predict_mask(image, faceNet, maskNet):
@@ -41,14 +36,11 @@ def detect_and_predict_mask(image, faceNet, maskNet):
     faceNet.setInput(blob)
     detections = faceNet.forward()
 
-    faces = []
-    locs = []
-    preds = []
+    faces, locs, preds = [], [], []
     conf_threshold = 0.3
     nms_threshold = 0.4
 
-    boxes = []
-    confidences = []
+    boxes, confidences = [], []
 
     for i in range(0, detections.shape[2]):
         confidence = detections[0, 0, i, 2]
@@ -64,7 +56,6 @@ def detect_and_predict_mask(image, faceNet, maskNet):
     for i in indices.flatten():
         (startX, startY, width, height) = boxes[i]
         endX, endY = startX + width, startY + height
-
         face = image[startY:endY, startX:endX]
         face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
         face = cv2.resize(face, (224, 224))
@@ -78,7 +69,7 @@ def detect_and_predict_mask(image, faceNet, maskNet):
         faces = np.array(faces, dtype="float32")
         preds = maskNet.predict(faces, batch_size=32)
 
-    return (locs, preds)
+    return locs, preds
 
 # 加载模型
 @st.cache(allow_output_mutation=True)
@@ -86,13 +77,13 @@ def load_models():
     prototxtPath = "./face_detector/deploy.prototxt"
     weightsPath = "./face_detector/res10_300x300_ssd_iter_140000.caffemodel"
     if not os.path.exists(prototxtPath) or not os.path.exists(weightsPath):
-        st.error(f"Face detection model files not found at {prototxtPath} or {weightsPath}!")
+        st.error(f"Face detection model files not found!")
         st.stop()
     faceNet = cv2.dnn.readNet(prototxtPath, weightsPath)
 
     mask_model_path = "mask_detector.h5"
     if not os.path.exists(mask_model_path):
-        st.error(f"Mask detection model not found at {mask_model_path}!")
+        st.error(f"Mask detection model not found!")
         st.stop()
     maskNet = load_model(mask_model_path)
     return faceNet, maskNet
@@ -102,34 +93,44 @@ faceNet, maskNet = load_models()
 # Image Mask Detection 页面
 if selected == "Image Mask Detection":
     st.title("Image Mask Detection")
-    st.write("Select a preloaded image from the list below or upload your own image:")
+    st.write("Upload an image or choose from the gallery below to detect masks:")
 
-    # 定义可供选择的图片列表
-    image_files = [f"0{i}.jpg" for i in range(1, 8) if os.path.exists(f"0{i}.jpg")]
-    image_files_display = [f"Preloaded Image {i}" for i in range(1, 8) if os.path.exists(f"0{i}.jpg")]
+    # 显示缩略图以表格形式
+    gallery_images = [f"{i:02d}.jpg" for i in range(1, 8)]
+    selected_image = None
 
-    # 显示图片列表选择
-    selected_image_index = st.selectbox("Choose an image from the list:", options=list(range(len(image_files_display))), format_func=lambda x: image_files_display[x])
-    selected_image = image_files[selected_image_index]
+    cols = st.columns(len(gallery_images))  # 动态生成列
+    for idx, image_name in enumerate(gallery_images):
+        image_path = os.path.join("./", image_name)
+        if os.path.exists(image_path):
+            thumbnail = cv2.imread(image_path)
+            thumbnail = cv2.cvtColor(thumbnail, cv2.COLOR_BGR2RGB)  # 转换为RGB格式
+            thumbnail = cv2.resize(thumbnail, (100, 100))  # 统一尺寸
+            with cols[idx % len(cols)]:
+                if st.button(f"Select {image_name}", key=image_name):
+                    selected_image = image_name
+                st.image(thumbnail, caption=image_name, use_column_width=True)
 
-    # 上传图片选项
-    uploaded_file = st.file_uploader("Or upload an image:", type=["jpg", "png", "jpeg"])
+    # 上传图片
+    st.write("**OR upload your own image:**")
+    uploaded_file = st.file_uploader("Choose an image file", type=["jpg", "png", "jpeg"])
+    image = None
+    if uploaded_file is not None:
+        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+        image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+    elif selected_image:
+        image_path = os.path.join("./", selected_image)
+        image = cv2.imread(image_path)
 
-    if uploaded_file or selected_image:
-        if uploaded_file:  # 用户上传了自己的图片
-            file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-            image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-        else:  # 用户选择了预加载图片
-            image = cv2.imread(selected_image)
-
+    # 检测逻辑
+    if image is not None:
         col1, col2 = st.columns(2)
 
         with col1:
-            st.image(image[:, :, ::-1], channels="RGB", caption="Original Image", use_column_width=True)
+            st.image(image[:, :, ::-1], caption="Original Image", use_column_width=True)
 
+        locs, preds = detect_and_predict_mask(image, faceNet, maskNet)
         font_scale, font_thickness, box_thickness = adjust_font_and_box_size(image)
-
-        (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
 
         for (box, pred) in zip(locs, preds):
             (startX, startY, endX, endY) = box
@@ -143,4 +144,4 @@ if selected == "Image Mask Detection":
             cv2.rectangle(image, (startX, startY), (endX, endY), color, box_thickness)
 
         with col2:
-            st.image(image[:, :, ::-1], channels="RGB", caption="Prediction Image", use_column_width=True)
+            st.image(image[:, :, ::-1], caption="Prediction Image", use_column_width=True)
