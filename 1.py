@@ -150,9 +150,13 @@ elif selected == "Real-time Camera Detection":
     rtc_configuration = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
 
     # 启动 WebRTC
-    webrtc_streamer(
+    webrtc_ctx = webrtc_streamer(
         key="mask-detection",
         video_transformer_factory=MaskDetectionTransformer,
         rtc_configuration=rtc_configuration,
         media_stream_constraints={"video": True, "audio": False},
     )
+
+    # 检查是否可以直接启动默认摄像头检测
+    if webrtc_ctx.video_processor:
+        st.success("Real-time mask detection started with the default camera!")
