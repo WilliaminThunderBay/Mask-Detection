@@ -111,12 +111,12 @@ if selected == "Image Mask Detection":
     col1, col2, col3 = st.columns(3)
     for idx, image_file in enumerate(image_files):
         with [col1, col2, col3][idx % 3]:
+            # 显示缩略图，调整大小
+            image = cv2.imread(image_file)
+            resized_image = cv2.resize(image, (150, 100))  # 缩略图尺寸
+            st.image(resized_image[:, :, ::-1], caption=image_file, use_column_width=True)
             if st.button(f"Select {image_file}"):
                 selected_image = image_file
-
-            # 显示缩略图
-            image = cv2.imread(image_file)
-            st.image(image[:, :, ::-1], caption=image_file, use_column_width=True)
 
     # 允许用户上传自己的照片
     uploaded_file = st.file_uploader("Or upload an image:", type=["jpg", "png", "jpeg"])
