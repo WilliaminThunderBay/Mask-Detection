@@ -34,8 +34,8 @@ def adjust_font_and_box_size(image):
         box_thickness = 8
     else:  # 低分辨率
         font_scale = 1.0
-        font_thickness = 2
-        box_thickness = 2
+        font_thickness = 1.5
+        box_thickness = 1.5
 
     return font_scale, font_thickness, box_thickness
 
