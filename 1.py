@@ -30,12 +30,12 @@ def adjust_font_and_box_size(image):
     # 根据分辨率动态调整大小
     if resolution > 1024 * 768:  # 高分辨率
         font_scale = 2.0
-        font_thickness = 8
-        box_thickness = 8
+        font_thickness = 10
+        box_thickness = 10
     else:  # 低分辨率
-        font_scale = 0.7
+        font_scale = 0.6
         font_thickness = 3
-        box_thickness = 2
+        box_thickness = 3
 
     return font_scale, font_thickness, box_thickness
 
