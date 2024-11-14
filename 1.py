@@ -157,6 +157,8 @@ elif selected == "Real-time Camera Detection":
         media_stream_constraints={"video": True, "audio": False},
     )
 
-    # 检查是否可以直接启动默认摄像头检测
+    # 提示实时检测已启动
     if webrtc_ctx.video_processor:
-        st.success("Real-time mask detection started with the default camera!")
+        st.success("Real-time mask detection started!")
+    else:
+        st.warning("Click 'Select Device' to enable your camera.")
