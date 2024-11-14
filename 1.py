@@ -1,6 +1,7 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
+import av
 import cv2
 import numpy as np
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
@@ -129,21 +130,25 @@ elif selected == "Real-time Camera Detection":
 
     class MaskDetectionTransformer(VideoTransformerBase):
         def transform(self, frame):
-            image = frame.to_ndarray(format="bgr24")
-            (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
+            try:
+                image = frame.to_ndarray(format="bgr24")
+                (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
 
-            for (box, pred) in zip(locs, preds):
-                (startX, startY, endX, endY) = box
-                (mask, withoutMask) = pred
+                for (box, pred) in zip(locs, preds):
+                    (startX, startY, endX, endY) = box
+                    (mask, withoutMask) = pred
 
-                label = "Mask" if mask > withoutMask else "No Mask"
-                color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
-                label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
+                    label = "Mask" if mask > withoutMask else "No Mask"
+                    color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+                    label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 
-                cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
-                cv2.rectangle(image, (startX, startY), (endX, endY), color, 2)
+                    cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
+                    cv2.rectangle(image, (startX, startY), (endX, endY), color, 2)
 
-            return frame
+                return av.VideoFrame.from_ndarray(image, format="bgr24")
+            except Exception as e:
+                print("Error during transform:", e)
+                return frame
 
     webrtc_streamer(
         key="mask-detection",
