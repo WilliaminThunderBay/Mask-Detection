@@ -147,7 +147,7 @@ elif selected == "Real-time Camera Detection":
 
                 return av.VideoFrame.from_ndarray(image, format="bgr24")
             except Exception as e:
-                print("Error during transform:", e)
+                st.error(f"Error during transform: {e}")
                 return frame
 
     webrtc_streamer(
