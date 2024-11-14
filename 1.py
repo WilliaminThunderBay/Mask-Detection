@@ -131,7 +131,7 @@ elif selected == "Image Mask Detection":
             color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
             label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 
-            cv2.putText(image, label, (startX, startY - 20), cv2.FONT_HERSHEY_SIMPLEX, 1.5, color, 8)
+            cv2.putText(image, label, (startX, startY - 20), cv2.FONT_HERSHEY_SIMPLEX, 2.0, color, 8)
             cv2.rectangle(image, (startX, startY), (endX, endY), color, 8)
 
         with col2:
