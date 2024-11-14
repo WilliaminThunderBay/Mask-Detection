@@ -192,3 +192,29 @@ elif selected == "Real-time Camera Detection":
         st.success("Real-time mask detection started!")
     else:
         st.warning("Click 'Select Device' to enable your camera.")
+    # 添加 CSS 样式用于自定义按钮外观
+st.markdown("""
+    <style>
+    .select-device-button {
+        background-color: #ff5722;
+        color: white;
+        font-size: 20px;
+        font-weight: bold;
+        border: none;
+        border-radius: 12px;
+        padding: 10px 20px;
+        cursor: pointer;
+        text-align: center;
+        display: inline-block;
+        margin: 10px 0;
+        transition: 0.3s;
+    }
+    .select-device-button:hover {
+        background-color: #e64a19;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# 添加按钮 HTML
+st.markdown('<button class="select-device-button">Select Device</button>', unsafe_allow_html=True)
+
