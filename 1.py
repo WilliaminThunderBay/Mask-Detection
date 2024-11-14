@@ -1,5 +1,6 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, RTCConfiguration
 import cv2
 import numpy as np
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
@@ -26,12 +27,12 @@ def adjust_font_and_box_size(image):
     resolution = height * width
     if resolution > 1024 * 768:  # 高分辨率
         font_scale = 2.0
-        font_thickness = 8
-        box_thickness = 8
+        font_thickness = 10
+        box_thickness = 10
     else:  # 低分辨率
-        font_scale = 1.0
+        font_scale = 0.5
         font_thickness = 2
-        box_thickness = 2
+        box_thickness = 3
     return font_scale, font_thickness, box_thickness
 
 # 定义口罩检测函数
@@ -110,26 +111,57 @@ if selected == "About":
 # Image Mask Detection 页面
 elif selected == "Image Mask Detection":
     st.title("Image Mask Detection")
-    st.write("Select an image below to detect masks:")
+    st.write("Select a preloaded image or upload your own image:")
 
-    # 添加七张可选择的照片
-    photos = [f"0{i}.jpg" for i in range(1, 8)]
-    selected_photo = st.selectbox("Select a photo", options=photos)
+    # 提供选择的七张照片
+    images = [f"0{i}.jpg" for i in range(1, 8) if os.path.exists(f"0{i}.jpg")]
+    selected_image = st.selectbox("Choose a preloaded image:", images)
 
-    if selected_photo:
-        # 显示用户选择的图片
-        image_path = f"./images/{selected_photo}"
-        if not os.path.exists(image_path):
-            st.error(f"Image not found at {image_path}!")
-        else:
-            image = cv2.imread(image_path)
-            col1, col2 = st.columns(2)
+    # 允许用户上传自己的照片
+    uploaded_file = st.file_uploader("Or upload an image:", type=["jpg", "png", "jpeg"])
 
-            with col1:
-                st.image(image[:, :, ::-1], channels="RGB", caption="Selected Image", use_column_width=True)
+    if selected_image or uploaded_file:
+        # 如果用户选择了预加载的图片
+        if selected_image:
+            image = cv2.imread(selected_image)
+        else:  # 用户上传了自己的图片
+            file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+            image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.image(image[:, :, ::-1], channels="RGB", caption="Original Image", use_column_width=True)
+
+        font_scale, font_thickness, box_thickness = adjust_font_and_box_size(image)
+
+        (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
+
+        for (box, pred) in zip(locs, preds):
+            (startX, startY, endX, endY) = box
+            (mask, withoutMask) = pred
+
+            label = "Mask" if mask > withoutMask else "No Mask"
+            color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+            label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
+
+            cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness)
+            cv2.rectangle(image, (startX, startY), (endX, endY), color, box_thickness)
+
+        with col2:
+            st.image(image[:, :, ::-1], channels="RGB", caption="Prediction Image", use_column_width=True)
+
+# Real-time Camera Detection 页面
+elif selected == "Real-time Camera Detection":
+    st.title("Real-time Camera Detection")
+    st.write("Use your camera to detect masks in real time.")
+
+    class MaskDetectionTransformer(VideoTransformerBase):
+        def transform(self, frame):
+            image = frame.to_ndarray(format="bgr24")
+            (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
 
             font_scale, font_thickness, box_thickness = adjust_font_and_box_size(image)
-            (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
 
             for (box, pred) in zip(locs, preds):
                 (startX, startY, endX, endY) = box
@@ -142,19 +174,13 @@ elif selected == "Image Mask Detection":
                 cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness)
                 cv2.rectangle(image, (startX, startY), (endX, endY), color, box_thickness)
 
-            with col2:
-                st.image(image[:, :, ::-1], channels="RGB", caption="Prediction Result", use_column_width=True)
-
-# Real-time Camera Detection 页面
-elif selected == "Real-time Camera Detection":
-    st.title("Real-time Camera Detection")
-    st.write("Use your camera to detect masks in real time.")
+            return image
 
     rtc_configuration = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
 
     webrtc_ctx = webrtc_streamer(
         key="mask-detection",
-        video_transformer_factory=None,
+        video_transformer_factory=MaskDetectionTransformer,
         rtc_configuration=rtc_configuration,
         media_stream_constraints={"video": True, "audio": False},
     )
