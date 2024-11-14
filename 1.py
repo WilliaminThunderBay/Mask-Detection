@@ -139,28 +139,6 @@ elif selected == "Real-time Camera Detection":
     st.title("Real-time Camera Detection")
     st.write("Use your camera to detect masks in real time.")
 
-    # 定义醒目的 Select Device 按钮
-    st.markdown("""
-    <style>
-    .select-device-button {
-        background-color: #FF5722;
-        color: white;
-        font-size: 18px;
-        font-weight: bold;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin-bottom: 10px;
-        text-align: center;
-        transition: background-color 0.3s ease;
-    }
-    .select-device-button:hover {
-        background-color: #E64A19;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    st.markdown('<div class="select-device-button">Select Device</div>', unsafe_allow_html=True)
-
     class MaskDetectionTransformer(VideoTransformerBase):
         def transform(self, frame):
             image = frame.to_ndarray(format="bgr24")
@@ -191,30 +169,5 @@ elif selected == "Real-time Camera Detection":
     if webrtc_ctx.video_processor:
         st.success("Real-time mask detection started!")
     else:
-        st.warning("Click 'Select Device' to enable your camera.")
-    # 添加 CSS 样式用于自定义按钮外观
-st.markdown("""
-    <style>
-    .select-device-button {
-        background-color: #ff5722;
-        color: white;
-        font-size: 20px;
-        font-weight: bold;
-        border: none;
-        border-radius: 12px;
-        padding: 10px 20px;
-        cursor: pointer;
-        text-align: center;
-        display: inline-block;
-        margin: 10px 0;
-        transition: 0.3s;
-    }
-    .select-device-button:hover {
-        background-color: #e64a19;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# 添加按钮 HTML
-st.markdown('<button class="select-device-button">Select Device</button>', unsafe_allow_html=True)
-
+        st.warning("Click 'Please Select Device' to enable your camera first!!!!")
+    
