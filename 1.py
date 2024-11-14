@@ -102,25 +102,32 @@ faceNet, maskNet = load_models()
 # Image Mask Detection 页面
 if selected == "Image Mask Detection":
     st.title("Image Mask Detection")
-    st.write("Select a preloaded image from the list below or upload your own image:")
+    st.write("Select a preloaded image, preview thumbnails below, or upload your own image:")
 
-    # 定义可供选择的图片列表
+    # 显示所有七张图片的缩略图
     image_files = [f"0{i}.jpg" for i in range(1, 8) if os.path.exists(f"0{i}.jpg")]
-    image_files_display = [f"Preloaded Image {i}" for i in range(1, 8) if os.path.exists(f"0{i}.jpg")]
+    selected_image = None
 
-    # 显示图片列表选择
-    selected_image_index = st.selectbox("Choose an image from the list:", options=list(range(len(image_files_display))), format_func=lambda x: image_files_display[x])
-    selected_image = image_files[selected_image_index]
+    col1, col2, col3 = st.columns(3)
+    for idx, image_file in enumerate(image_files):
+        with [col1, col2, col3][idx % 3]:
+            # 显示缩略图，调整大小
+            image = cv2.imread(image_file)
+            resized_image = cv2.resize(image, (150, 100))  # 缩略图尺寸
+            st.image(resized_image[:, :, ::-1], caption=image_file, use_column_width=True)
+            if st.button(f"Select {image_file}"):
+                selected_image = image_file
 
-    # 上传图片选项
+    # 允许用户上传自己的照片
     uploaded_file = st.file_uploader("Or upload an image:", type=["jpg", "png", "jpeg"])
 
-    if uploaded_file or selected_image:
-        if uploaded_file:  # 用户上传了自己的图片
+    if selected_image or uploaded_file:
+        # 如果用户选择了预加载的图片
+        if selected_image:
+            image = cv2.imread(selected_image)
+        else:  # 用户上传了自己的图片
             file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
             image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-        else:  # 用户选择了预加载图片
-            image = cv2.imread(selected_image)
 
         col1, col2 = st.columns(2)
 
