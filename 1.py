@@ -1,5 +1,6 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, RTCConfiguration
 import cv2
 import numpy as np
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
@@ -99,24 +100,22 @@ def load_models():
 
 faceNet, maskNet = load_models()
 
+# About 页面
+if selected == "About":
+    st.title("About")
+    st.write("""
+    Welcome to the **Mask Detection Dashboard**! This platform demonstrates 
+    mask detection functionalities using image uploads and real-time camera feeds.
+    """)
+
 # Image Mask Detection 页面
-if selected == "Image Mask Detection":
+elif selected == "Image Mask Detection":
     st.title("Image Mask Detection")
-    st.write("Select a preloaded image, preview thumbnails below, or upload your own image:")
+    st.write("Select a preloaded image or upload your own image:")
 
-    # 显示所有七张图片的缩略图
-    image_files = [f"0{i}.jpg" for i in range(1, 8) if os.path.exists(f"0{i}.jpg")]
-    selected_image = None
-
-    col1, col2, col3 = st.columns(3)
-    for idx, image_file in enumerate(image_files):
-        with [col1, col2, col3][idx % 3]:
-            # 显示缩略图，调整大小
-            image = cv2.imread(image_file)
-            resized_image = cv2.resize(image, (150, 100))  # 缩略图尺寸
-            st.image(resized_image[:, :, ::-1], caption=image_file, use_column_width=True)
-            if st.button(f"Select {image_file}"):
-                selected_image = image_file
+    # 提供选择的七张照片
+    images = [f"0{i}.jpg" for i in range(1, 8) if os.path.exists(f"0{i}.jpg")]
+    selected_image = st.selectbox("Choose a preloaded image:", images)
 
     # 允许用户上传自己的照片
     uploaded_file = st.file_uploader("Or upload an image:", type=["jpg", "png", "jpeg"])
@@ -151,3 +150,42 @@ if selected == "Image Mask Detection":
 
         with col2:
             st.image(image[:, :, ::-1], channels="RGB", caption="Prediction Image", use_column_width=True)
+
+# Real-time Camera Detection 页面
+elif selected == "Real-time Camera Detection":
+    st.title("Real-time Camera Detection")
+    st.write("Use your camera to detect masks in real time.")
+
+    class MaskDetectionTransformer(VideoTransformerBase):
+        def transform(self, frame):
+            image = frame.to_ndarray(format="bgr24")
+            (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
+
+            font_scale, font_thickness, box_thickness = adjust_font_and_box_size(image)
+
+            for (box, pred) in zip(locs, preds):
+                (startX, startY, endX, endY) = box
+                (mask, withoutMask) = pred
+
+                label = "Mask" if mask > withoutMask else "No Mask"
+                color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+                label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
+
+                cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness)
+                cv2.rectangle(image, (startX, startY), (endX, endY), color, box_thickness)
+
+            return image
+
+    rtc_configuration = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
+
+    webrtc_ctx = webrtc_streamer(
+        key="mask-detection",
+        video_transformer_factory=MaskDetectionTransformer,
+        rtc_configuration=rtc_configuration,
+        media_stream_constraints={"video": True, "audio": False},
+    )
+
+    if webrtc_ctx.video_processor:
+        st.success("Real-time mask detection started!")
+    else:
+        st.warning("Click 'Select Device' to enable your camera.")
