@@ -77,8 +77,8 @@ def draw_labels(image, locs, preds):
         (mask, withoutMask) = pred
 
         # 强制设置文字大小和框的粗度
-        font_scale = max(1.5, (w / 800))  # 增强字体大小
-        thickness = max(10, int(w / 200))  # 增强框的粗细
+        font_scale = max(1.5, (w / 600))  # 增强字体大小
+        thickness = max(8, int(w / 200))  # 增强框的粗细
 
         label = "Mask" if mask > withoutMask else "No Mask"
         color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
