@@ -32,42 +32,22 @@ def detect_and_predict_mask(image, faceNet, maskNet):
     locs = []
     preds = []
 
-    # 非最大值抑制参数
-    conf_threshold = 0.3  # 检测阈值
-    nms_threshold = 0.4   # NMS阈值
-
-    boxes = []
-    confidences = []
-
-    # 遍历检测到的对象
     for i in range(0, detections.shape[2]):
         confidence = detections[0, 0, i, 2]
-        if confidence > conf_threshold:
-            # 计算检测框坐标
+        if confidence > 0.5:
             box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
             (startX, startY, endX, endY) = box.astype("int")
             (startX, startY) = (max(0, startX), max(0, startY))
             (endX, endY) = (min(w - 1, endX), min(h - 1, endY))
 
-            boxes.append([startX, startY, endX - startX, endY - startY])
-            confidences.append(float(confidence))
+            face = image[startY:endY, startX:endX]
+            face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
+            face = cv2.resize(face, (224, 224))
+            face = img_to_array(face)
+            face = preprocess_input(face)
 
-    # 应用非最大值抑制
-    indices = cv2.dnn.NMSBoxes(boxes, confidences, conf_threshold, nms_threshold)
-
-    for i in indices.flatten():
-        (startX, startY, width, height) = boxes[i]
-        endX, endY = startX + width, startY + height
-
-        # 提取人脸区域
-        face = image[startY:endY, startX:endX]
-        face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
-        face = cv2.resize(face, (224, 224))
-        face = img_to_array(face)
-        face = preprocess_input(face)
-
-        faces.append(face)
-        locs.append((startX, startY, endX, endY))
+            faces.append(face)
+            locs.append((startX, startY, endX, endY))
 
     if len(faces) > 0:
         faces = np.array(faces, dtype="float32")
@@ -136,8 +116,9 @@ elif selected == "Image Mask Detection":
             color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
             label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 
-            cv2.putText(image, label, (startX, startY - 20), cv2.FONT_HERSHEY_SIMPLEX, 3, color, 5)
-            cv2.rectangle(image, (startX, startY), (endX, endY), color, 10)
+            # 修改框和文字的样式
+            cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 2.5, color, 15)  # 大文字了
+            cv2.rectangle(image, (startX, startY), (endX, endY), color, 20)  # 粗的框
 
         with col2:
             st.image(image[:, :, ::-1], channels="RGB", caption="Prediction Image", use_column_width=True)
@@ -147,6 +128,7 @@ elif selected == "Real-time Camera Detection":
     st.title("Real-time Camera Detection")
     st.write("Use your camera to detect masks in real time.")
 
+    # 定义实时检测逻辑
     class MaskDetectionTransformer(VideoTransformerBase):
         def transform(self, frame):
             image = frame.to_ndarray(format="bgr24")
@@ -160,13 +142,16 @@ elif selected == "Real-time Camera Detection":
                 color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
                 label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 
-                cv2.putText(image, label, (startX, startY - 20), cv2.FONT_HERSHEY_SIMPLEX, 3, color, 5)
-                cv2.rectangle(image, (startX, startY), (endX, endY), color, 10)
+                # 修改框和文字的样式
+                cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 2.5, color, 10)  # 更大的文字
+                cv2.rectangle(image, (startX, startY), (endX, endY), color, 15)  # 更粗的框
 
             return image
 
+    # WebRTC 配置
     rtc_configuration = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
 
+    # 启动 WebRTC
     webrtc_ctx = webrtc_streamer(
         key="mask-detection",
         video_transformer_factory=MaskDetectionTransformer,
@@ -174,6 +159,7 @@ elif selected == "Real-time Camera Detection":
         media_stream_constraints={"video": True, "audio": False},
     )
 
+    # 提示实时检测已启动
     if webrtc_ctx.video_processor:
         st.success("Real-time mask detection started!")
     else:
