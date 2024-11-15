@@ -136,13 +136,17 @@ if selected == "Introduction":
 
     st.markdown("""
     **The model: MobileNetV2 architecture**
+    """)
+    # 将 MobileNetV2 架构图片放在这句话后面
+    st.image("uaai_a_2145638_f0001_oc.jpg", caption="MobileNetV2 Architecture and Applications", width=400)
+
+    st.markdown("""
     **Model advantages:**
     - The amount of parameters and calculations are significantly reduced.
     - Can run on low-power devices and is suitable for real-time applications.
     - Supports adjusting network width and input resolution to flexibly adapt to different computing resources and performance requirements.
     """)
-    # 显示 MobileNetV2 架构示例图片
-    st.image("uaai_a_2145638_f0001_oc.jpg", caption="MobileNetV2 Architecture and Applications", width=400)
+
 
 
 
