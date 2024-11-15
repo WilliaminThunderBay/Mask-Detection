@@ -128,23 +128,23 @@ elif selected == "Result":
     - When you are all set, run the `train_mask_detector.py` to train the model.
     - When model is available, run `face_mask_detection.py` to get into the GUI.
     **Example GUI:**
-    st.image("/mnt/data/GUI.png", caption="GUI Interface", use_column_width=True)
+    st.image("GUI.png", caption="GUI Interface", use_column_width=True)
     
     **Example Evaluation Metrics:**
     - LR=0.0001 EPOCHS=20 DROPOUT=0.5
-    st.image("/mnt/data/Metrics1.png", caption="Evaluation Metrics 1", use_column_width=True)
+    st.image("Metrics1.png", caption="Evaluation Metrics 1", use_column_width=True)
     - GUILR=0.0005 EPOCHS=20 DROPOUT=0.6
-    st.image("/mnt/data/Metrics2.png", caption="Evaluation Metrics 2", use_column_width=True)
+    st.image("Metrics2.png", caption="Evaluation Metrics 2", use_column_width=True)
     - LR=0.0001 EPOCHS=30 DROPOUT=0.5
-    st.image("/mnt/data/Metrics3.png", caption="Evaluation Metrics 3", use_column_width=True)
+    st.image("Metrics3.png", caption="Evaluation Metrics 3", use_column_width=True)
     
     **Loss & Accuracy Plot:**
     - LR=0.0001 EPOCHS=20 DROPOUT=0.5
-     st.image("/mnt/data/Loss_Accuracy_LR_0.0001_EPOCHS_20.png", caption="Training Loss and Accuracy (LR=0.0001, EPOCHS=20)", use_column_width=True)
+     st.image("Loss_Accuracy_LR_0.0001_EPOCHS_20.png", caption="Training Loss and Accuracy (LR=0.0001, EPOCHS=20)", use_column_width=True)
     - LR=0.0005 EPOCHS=20 DROPOUT=0.6
-     st.image("/mnt/data/Loss_Accuracy_LR_0.0001_EPOCHS_30.png", caption="Training Loss and Accuracy (LR=0.0001, EPOCHS=30)", use_column_width=True)
+     st.image("Loss_Accuracy_LR_0.0001_EPOCHS_30.png", caption="Training Loss and Accuracy (LR=0.0001, EPOCHS=30)", use_column_width=True)
     - LR=0.0001 EPOCHS=30 DROPOUT=0.5
-    st.image("/mnt/data/Loss_Accuracy_LR_0.0005_EPOCHS_20.png", caption="Training Loss and Accuracy (LR=0.0005, EPOCHS=20)", use_column_width=True)
+    st.image("Loss_Accuracy_LR_0.0005_EPOCHS_20.png", caption="Training Loss and Accuracy (LR=0.0005, EPOCHS=20)", use_column_width=True)
     """)
 
    
