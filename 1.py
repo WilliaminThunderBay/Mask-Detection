@@ -150,7 +150,7 @@ elif selected == "Image Mask Detection":
             if os.path.exists(image_path):
                 thumbnail = cv2.imread(image_path)
                 thumbnail = cv2.cvtColor(thumbnail, cv2.COLOR_BGR2RGB)
-                thumbnail = cv2.resize(thumbnail, (30, 30))
+                thumbnail = cv2.resize(thumbnail, (60, 60))
                 st.image(thumbnail, caption=image_name, use_column_width=False)
         with cols[2]:
             if st.button(f"Select {image_name}", key=image_name):
