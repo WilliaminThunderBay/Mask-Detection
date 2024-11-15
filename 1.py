@@ -1,11 +1,10 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, RTCConfiguration
-import cv2
-import numpy as np
+from tensorflow.keras.models import load_model
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from tensorflow.keras.preprocessing.image import img_to_array
-from tensorflow.keras.models import load_model
+import cv2
+import numpy as np
 import os
 
 # 设置页面标题
@@ -23,16 +22,14 @@ with st.sidebar:
 
 # 动态调整框和文字的大小
 def adjust_font_and_box_size(image):
-    # 获取图片分辨率
     height, width = image.shape[:2]
     resolution = height * width
 
-    # 根据分辨率动态调整大小
-    if resolution > 1024 * 768:  # 高分辨率
+    if resolution > 1024 * 768:
         font_scale = 2.0
         font_thickness = 10
         box_thickness = 10
-    else:  # 低分辨率
+    else:
         font_scale = 0.5
         font_thickness = 2
         box_thickness = 3
@@ -49,13 +46,12 @@ def detect_and_predict_mask(image, faceNet, maskNet):
     faces = []
     locs = []
     preds = []
-    conf_threshold = 0.3  # 检测置信度阈值
-    nms_threshold = 0.4   # NMS阈值
+    conf_threshold = 0.3
+    nms_threshold = 0.4
 
     boxes = []
     confidences = []
 
-    # 遍历检测到的对象
     for i in range(0, detections.shape[2]):
         confidence = detections[0, 0, i, 2]
         if confidence > conf_threshold:
@@ -66,7 +62,6 @@ def detect_and_predict_mask(image, faceNet, maskNet):
             boxes.append([startX, startY, endX - startX, endY - startY])
             confidences.append(float(confidence))
 
-    # 非最大值抑制
     indices = cv2.dnn.NMSBoxes(boxes, confidences, conf_threshold, nms_threshold)
     for i in indices.flatten():
         (startX, startY, width, height) = boxes[i]
@@ -124,17 +119,16 @@ elif selected == "Result":
         st.warning("Training result image not found!")
 
 # Image Mask Detection 页面
-if selected == "Image Mask Detection":
+elif selected == "Image Mask Detection":
     st.title("Image Mask Detection")
     st.write("Upload an image or choose from the gallery below to detect masks:")
 
-    # 显示缩略图以表格形式
+    # 紧凑表格布局
     gallery_images = [f"{i:02d}.jpg" for i in range(1, 8)]
     selected_image = None
 
-    # 表格头部
     st.markdown("### Image Gallery")
-    col_titles = st.columns([1, 2, 2])  # 三列：序号、缩略图、选择
+    col_titles = st.columns([1, 3, 1])
     with col_titles[0]:
         st.markdown("**No.**")
     with col_titles[1]:
@@ -143,23 +137,22 @@ if selected == "Image Mask Detection":
         st.markdown("**Action**")
 
     for idx, image_name in enumerate(gallery_images, start=1):
-        cols = st.columns([1, 2, 2])  # 动态生成列
+        cols = st.columns([1, 3, 1])
         with cols[0]:
             st.write(idx)
         with cols[1]:
             image_path = os.path.join("./", image_name)
             if os.path.exists(image_path):
                 thumbnail = cv2.imread(image_path)
-                thumbnail = cv2.cvtColor(thumbnail, cv2.COLOR_BGR2RGB)  # 转换为RGB格式
-                thumbnail = cv2.resize(thumbnail, (50, 50))  # 缩略图尺寸 50x50
+                thumbnail = cv2.cvtColor(thumbnail, cv2.COLOR_BGR2RGB)
+                thumbnail = cv2.resize(thumbnail, (30, 30))
                 st.image(thumbnail, caption=image_name, use_column_width=False)
             else:
                 st.write("Not found")
         with cols[2]:
-            if st.button(f"Select {image_name}", key=image_name):
+            if st.button(f"Select", key=image_name):
                 selected_image = image_name
 
-    # 上传图片
     st.write("**OR upload your own image:**")
     uploaded_file = st.file_uploader("Choose an image file", type=["jpg", "png", "jpeg"])
     image = None
@@ -170,13 +163,7 @@ if selected == "Image Mask Detection":
         image_path = os.path.join("./", selected_image)
         image = cv2.imread(image_path)
 
-    # 检测逻辑
     if image is not None:
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.image(image[:, :, ::-1], caption="Original Image", use_column_width=True)
-
         locs, preds = detect_and_predict_mask(image, faceNet, maskNet)
         font_scale, font_thickness, box_thickness = adjust_font_and_box_size(image)
 
@@ -191,6 +178,9 @@ if selected == "Image Mask Detection":
             cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness)
             cv2.rectangle(image, (startX, startY), (endX, endY), color, box_thickness)
 
+        col1, col2 = st.columns(2)
+        with col1:
+            st.image(image[:, :, ::-1], caption="Original Image", use_column_width=True)
         with col2:
             st.image(image[:, :, ::-1], caption="Prediction Image", use_column_width=True)
 
@@ -204,7 +194,6 @@ elif selected == "Real-time Camera Detection":
             image = frame.to_ndarray(format="bgr24")
             (locs, preds) = detect_and_predict_mask(image, faceNet, maskNet)
 
-            # 获取动态调整的字体和框粗细
             font_scale, font_thickness, box_thickness = adjust_font_and_box_size(image)
 
             for (box, pred) in zip(locs, preds):
