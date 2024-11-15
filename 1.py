@@ -10,6 +10,12 @@ import os
 # 设置页面标题
 st.set_page_config(page_title="Mask Detection Dashboard", layout="wide")
 
+# 初始化 session_state
+if "selected_image" not in st.session_state:
+    st.session_state["selected_image"] = None
+if "uploaded_image" not in st.session_state:
+    st.session_state["uploaded_image"] = None
+
 # 侧边栏导航
 with st.sidebar:
     selected = option_menu(
@@ -123,9 +129,8 @@ elif selected == "Image Mask Detection":
     st.title("Image Mask Detection")
     st.write("Upload an image or choose from the gallery below to detect masks:")
 
-    # 紧凑表格布局
+    # 表格展示紧凑的图像选择列表
     gallery_images = [f"{i:02d}.jpg" for i in range(1, 8)]
-    selected_image = None
 
     st.markdown("### Image Gallery")
     col_titles = st.columns([1, 3, 1])
@@ -147,21 +152,29 @@ elif selected == "Image Mask Detection":
                 thumbnail = cv2.cvtColor(thumbnail, cv2.COLOR_BGR2RGB)
                 thumbnail = cv2.resize(thumbnail, (30, 30))
                 st.image(thumbnail, caption=image_name, use_column_width=False)
-            else:
-                st.write("Not found")
         with cols[2]:
-            if st.button(f"Select", key=image_name):
-                selected_image = image_name
+            if st.button(f"Select {image_name}", key=image_name):
+                st.session_state["selected_image"] = image_name
+                st.session_state["uploaded_image"] = None
+                st.experimental_rerun()
 
+    # 上传图片
     st.write("**OR upload your own image:**")
     uploaded_file = st.file_uploader("Choose an image file", type=["jpg", "png", "jpeg"])
-    image = None
-    if uploaded_file is not None:
-        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+    if uploaded_file:
+        st.session_state["uploaded_image"] = uploaded_file
+        st.session_state["selected_image"] = None
+        st.experimental_rerun()
+
+    # 展示结果在页面底部
+    if st.session_state["uploaded_image"]:
+        file_bytes = np.asarray(bytearray(st.session_state["uploaded_image"].read()), dtype=np.uint8)
         image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-    elif selected_image:
-        image_path = os.path.join("./", selected_image)
+    elif st.session_state["selected_image"]:
+        image_path = os.path.join("./", st.session_state["selected_image"])
         image = cv2.imread(image_path)
+    else:
+        image = None
 
     if image is not None:
         locs, preds = detect_and_predict_mask(image, faceNet, maskNet)
@@ -178,6 +191,8 @@ elif selected == "Image Mask Detection":
             cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness)
             cv2.rectangle(image, (startX, startY), (endX, endY), color, box_thickness)
 
+        st.markdown("---")
+        st.markdown("### Detection Result")
         col1, col2 = st.columns(2)
         with col1:
             st.image(image[:, :, ::-1], caption="Original Image", use_column_width=True)
