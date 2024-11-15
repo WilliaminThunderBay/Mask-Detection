@@ -232,4 +232,4 @@ elif selected == "Real-time Camera Detection":
     if webrtc_ctx.video_processor:
         st.success("Real-time mask detection started!")
     else:
-        st.warning("Click 'Select Device' to enable your camera.")
+        st.warning("Please Click 'Select Device' to enable your camera first!!!.")
