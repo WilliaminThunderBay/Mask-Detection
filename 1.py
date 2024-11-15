@@ -15,7 +15,7 @@ st.set_page_config(page_title="Mask Detection Dashboard", layout="wide")
 with st.sidebar:
     selected = option_menu(
         "Mask Detection",
-        ["About", "Result", "Image Mask Detection", "Real-time Camera Detection"],
+        ["Introduction", "Result", "Image Mask Detection", "Real-time Camera Detection"],
         icons=["info", "bar-chart", "image", "camera"],
         menu_icon="cast",
         default_index=0,
@@ -107,11 +107,12 @@ def load_models():
 faceNet, maskNet = load_models()
 
 # Introduction 页面
-if selected == "About":
+if selected == "Introduction":
     st.title("Introduction")
     
-    # 添加文字介绍
+    # 添加文字描述
     st.markdown("""
+    **Introduction:**
     Mask recognition technology has received widespread attention in the fields of public safety and medicine in recent years.
 
     **Dataset:**
@@ -119,26 +120,26 @@ if selected == "About":
     - The training and test datasets are divided into **80% training set** and **20% test set**.
     - There are **1,915 masked images** resized to 224x224 and **1,918 unmasked images**.
     """)
-    # 在 Dataset 段落后添加图片
-    st.image("/mnt/data/dataset.png", caption="Dataset Example", width=400)
+    # 显示 Dataset 示例图片
+    st.image("dataset.png", caption="Dataset Example", width=300)
 
     st.markdown("""
-    **The model: MobileNetV2 architecture**
-
     **Core formula of MobileNetV2:**
     In each reverse residual block, the input feature dimension 𝐷𝑖𝑛 is expanded to a larger dimension 𝐷𝑒𝑥𝑝𝑎𝑛𝑑 through pointwise convolution, and then spatial features are extracted through depthwise convolution.
     """)
-    # 在 Core formula 段落后添加图片
-    st.image("/mnt/data/equation2.png", caption="Core Formula of MobileNetV2", width=300)
+    # 显示公式图片
+    st.image("equation2.png", caption="Core Formula of MobileNetV2", width=300)
 
     st.markdown("""
+    **The model: MobileNetV2 architecture**
     **Model advantages:**
     - The amount of parameters and calculations are significantly reduced.
     - Can run on low-power devices and is suitable for real-time applications.
     - Supports adjusting network width and input resolution to flexibly adapt to different computing resources and performance requirements.
     """)
-    # 在 Architecture 描述后添加图片
-    st.image("/mnt/data/uaai_a_2145638_f0001_oc.jpg", caption="MobileNetV2 Architecture and Applications", width=400)
+    # 显示 MobileNetV2 架构示例图片
+    st.image("uaai_a_2145638_f0001_oc.jpg", caption="MobileNetV2 Architecture and Applications", width=400)
+
 
 
 
