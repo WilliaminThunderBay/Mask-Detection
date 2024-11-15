@@ -110,7 +110,7 @@ faceNet, maskNet = load_models()
 if selected == "About":
     st.title("Introduction")
     
-    # 添加介绍内容
+    # 添加文字介绍
     st.markdown("""
     Mask recognition technology has received widespread attention in the fields of public safety and medicine in recent years.
 
@@ -118,22 +118,28 @@ if selected == "About":
     - **Categories**: This is a list containing two categories, ["with_mask", "without_mask"].
     - The training and test datasets are divided into **80% training set** and **20% test set**.
     - There are **1,915 masked images** resized to 224x224 and **1,918 unmasked images**.
+    """)
+    # 在 Dataset 段落后添加图片
+    st.image("/mnt/data/dataset.png", caption="Dataset Example", width=400)
 
+    st.markdown("""
     **The model: MobileNetV2 architecture**
 
     **Core formula of MobileNetV2:**
     In each reverse residual block, the input feature dimension 𝐷𝑖𝑛 is expanded to a larger dimension 𝐷𝑒𝑥𝑝𝑎𝑛𝑑 through pointwise convolution, and then spatial features are extracted through depthwise convolution.
+    """)
+    # 在 Core formula 段落后添加图片
+    st.image("/mnt/data/equation2.png", caption="Core Formula of MobileNetV2", width=300)
 
+    st.markdown("""
     **Model advantages:**
     - The amount of parameters and calculations are significantly reduced.
     - Can run on low-power devices and is suitable for real-time applications.
     - Supports adjusting network width and input resolution to flexibly adapt to different computing resources and performance requirements.
     """)
+    # 在 Architecture 描述后添加图片
+    st.image("/mnt/data/uaai_a_2145638_f0001_oc.jpg", caption="MobileNetV2 Architecture and Applications", width=400)
 
-    # 添加图片并调整大小
-    st.image("dataset.png", caption="Dataset Example", width=300)
-    st.image("equation2.png", caption="Core Formula of MobileNetV2", width=300)
-    st.image("uaai_a_2145638_f0001_oc.jpg", caption="MobileNetV2 Architecture and Applications", width=400)
 
 
 # Result 页面
