@@ -97,7 +97,7 @@ def load_models():
         st.stop()
     faceNet = cv2.dnn.readNet(prototxtPath, weightsPath)
 
-    mask_model_path = "mask_detector.h5"
+    mask_model_path = "mask_detector.model"
     if not os.path.exists(mask_model_path):
         st.error(f"Mask detection model not found at {mask_model_path}!")
         st.stop()
