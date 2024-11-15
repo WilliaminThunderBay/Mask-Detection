@@ -121,31 +121,39 @@ elif selected == "Result":
     # 添加文字描述
     st.markdown("""
     **Instructions:**
-    Environment:keras 2.3.1 Tensorflow:1.15.2   Numpy:1.18.2  opencv-python:4.2.0  scipy:1.4.1
+    Environment: keras 2.3.1 Tensorflow:1.15.2   Numpy:1.18.2  opencv-python:4.2.0  scipy:1.4.1
     - Use python 3.7 to build.
     - Load necessary libraries mentioned in requirements.txt.
     - Some requirements may not be mentioned, follow the interpret instruction to install them.
     - When you are all set, run the `train_mask_detector.py` to train the model.
     - When model is available, run `face_mask_detection.py` to get into the GUI.
-    **Example GUI:**
-    st.image("GUI.png", caption="GUI Interface", use_column_width=True)
-    
-    **Example Evaluation Metrics:**
-    - LR=0.0001 EPOCHS=20 DROPOUT=0.5
-    st.image("Metrics1.png", caption="Evaluation Metrics 1", use_column_width=True)
-    - GUILR=0.0005 EPOCHS=20 DROPOUT=0.6
-    st.image("Metrics2.png", caption="Evaluation Metrics 2", use_column_width=True)
-    - LR=0.0001 EPOCHS=30 DROPOUT=0.5
-    st.image("Metrics3.png", caption="Evaluation Metrics 3", use_column_width=True)
-    
-    **Loss & Accuracy Plot:**
-    - LR=0.0001 EPOCHS=20 DROPOUT=0.5
-     st.image("Loss_Accuracy_LR_0.0001_EPOCHS_20.png", caption="Training Loss and Accuracy (LR=0.0001, EPOCHS=20)", use_column_width=True)
-    - LR=0.0005 EPOCHS=20 DROPOUT=0.6
-     st.image("Loss_Accuracy_LR_0.0001_EPOCHS_30.png", caption="Training Loss and Accuracy (LR=0.0001, EPOCHS=30)", use_column_width=True)
-    - LR=0.0001 EPOCHS=30 DROPOUT=0.5
-    st.image("Loss_Accuracy_LR_0.0005_EPOCHS_20.png", caption="Training Loss and Accuracy (LR=0.0005, EPOCHS=20)", use_column_width=True)
     """)
+
+    # 显示 GUI 示例图片
+    st.markdown("**Example GUI:**")
+    st.image("GUI.png", caption="GUI Interface", use_column_width=True)
+
+    # 显示 Evaluation Metrics 图片
+    st.markdown("**Example Evaluation Metrics:**")
+    st.markdown("- LR=0.0001 EPOCHS=20 DROPOUT=0.5")
+    st.image("Metrics1.png", caption="Evaluation Metrics 1", use_column_width=True)
+
+    st.markdown("- GUILR=0.0005 EPOCHS=20 DROPOUT=0.6")
+    st.image("Metrics2.png", caption="Evaluation Metrics 2", use_column_width=True)
+
+    st.markdown("- LR=0.0001 EPOCHS=30 DROPOUT=0.5")
+    st.image("Metrics3.png", caption="Evaluation Metrics 3", use_column_width=True)
+
+    # 显示 Loss & Accuracy Plot 图片
+    st.markdown("**Loss & Accuracy Plot:**")
+    st.markdown("- LR=0.0001 EPOCHS=20 DROPOUT=0.5")
+    st.image("Loss_Accuracy_LR_0.0001_EPOCHS_20.png", caption="Training Loss and Accuracy (LR=0.0001, EPOCHS=20)", use_column_width=True)
+
+    st.markdown("- LR=0.0005 EPOCHS=20 DROPOUT=0.6")
+    st.image("Loss_Accuracy_LR_0.0001_EPOCHS_30.png", caption="Training Loss and Accuracy (LR=0.0001, EPOCHS=30)", use_column_width=True)
+
+    st.markdown("- LR=0.0001 EPOCHS=30 DROPOUT=0.5")
+    st.image("Loss_Accuracy_LR_0.0005_EPOCHS_20.png", caption="Training Loss and Accuracy (LR=0.0005, EPOCHS=20)", use_column_width=True)
 
    
     
