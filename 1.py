@@ -21,6 +21,7 @@ with st.sidebar:
         default_index=0,
     )
 
+
 # 动态调整框和文字的大小
 def adjust_font_and_box_size(image):
     # 获取图片分辨率
@@ -39,6 +40,7 @@ def adjust_font_and_box_size(image):
 
     return font_scale, font_thickness, box_thickness
 
+
 # 定义口罩检测函数
 def detect_and_predict_mask(image, faceNet, maskNet):
     (h, w) = image.shape[:2]
@@ -50,7 +52,7 @@ def detect_and_predict_mask(image, faceNet, maskNet):
     locs = []
     preds = []
     conf_threshold = 0.3  # 检测置信度阈值
-    nms_threshold = 0.4   # NMS阈值
+    nms_threshold = 0.4  # NMS阈值
 
     boxes = []
     confidences = []
@@ -87,6 +89,7 @@ def detect_and_predict_mask(image, faceNet, maskNet):
 
     return (locs, preds)
 
+
 # 加载模型
 @st.cache(allow_output_mutation=True)
 def load_models():
@@ -104,12 +107,13 @@ def load_models():
     maskNet = load_model(mask_model_path)
     return faceNet, maskNet
 
+
 faceNet, maskNet = load_models()
 
 # Introduction 页面
 if selected == "Introduction":
     st.title("Introduction")
-    
+
     # 添加文字描述
     st.markdown("""
     **Introduction:**
@@ -131,17 +135,14 @@ if selected == "Introduction":
     st.image("equation2.png", caption="Core Formula of MobileNetV2", width=300)
 
     st.markdown("""
-    **The model: MobileNetV2 architecture**""")
-     # 显示 MobileNetV2 架构示例图片
-    st.image("uaai_a_2145638_f0001_oc.jpg", caption="MobileNetV2 Architecture and Applications", width=400)
-    
-     st.markdown("""
-     **Model advantages:**
+    **The model: MobileNetV2 architecture**
+    **Model advantages:**
     - The amount of parameters and calculations are significantly reduced.
     - Can run on low-power devices and is suitable for real-time applications.
     - Supports adjusting network width and input resolution to flexibly adapt to different computing resources and performance requirements.
     """)
-
+    # 显示 MobileNetV2 架构示例图片
+    st.image("uaai_a_2145638_f0001_oc.jpg", caption="MobileNetV2 Architecture and Applications", width=400)
 
 
 
@@ -149,7 +150,7 @@ if selected == "Introduction":
 # Result 页面
 elif selected == "Result":
     st.title("Result")
-    
+
     # 添加文字描述
     st.markdown("""
     **Instructions:**
@@ -167,7 +168,7 @@ elif selected == "Result":
 
     # 分两行展示图片
     st.markdown("**Evaluation Metrics and Loss & Accuracy Plots:**")
-    
+
     # 第一行三张图片
     cols1 = st.columns(3)
     with cols1[0]:
@@ -176,7 +177,7 @@ elif selected == "Result":
         st.image("Metrics2.png", caption="Evaluation Metrics 2", width=300)
     with cols1[2]:
         st.image("Metrics3.png", caption="Evaluation Metrics 3", width=300)
-    
+
     # 第二行三张图片
     cols2 = st.columns(3)
     with cols2[0]:
@@ -186,9 +187,6 @@ elif selected == "Result":
     with cols2[2]:
         st.image("Loss_Accuracy_LR_0.0005_EPOCHS_20.png", caption="Loss & Accuracy (LR=0.0005, EPOCHS=20)", width=300)
 
-
-   
-    
 # Image Mask Detection 页面
 if selected == "Image Mask Detection":
     st.title("Image Mask Detection")
@@ -254,7 +252,8 @@ if selected == "Image Mask Detection":
             color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
             label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 
-            cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness)
+            cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color,
+                        font_thickness)
             cv2.rectangle(image, (startX, startY), (endX, endY), color, box_thickness)
 
         with col2:
@@ -264,6 +263,7 @@ if selected == "Image Mask Detection":
 elif selected == "Real-time Camera Detection":
     st.title("Real-time Camera Detection")
     st.write("Use your camera to detect masks in real time.")
+
 
     class MaskDetectionTransformer(VideoTransformerBase):
         def transform(self, frame):
@@ -281,10 +281,12 @@ elif selected == "Real-time Camera Detection":
                 color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
                 label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 
-                cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness)
+                cv2.putText(image, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color,
+                            font_thickness)
                 cv2.rectangle(image, (startX, startY), (endX, endY), color, box_thickness)
 
             return image
+
 
     rtc_configuration = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
 
