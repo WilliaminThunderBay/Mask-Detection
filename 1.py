@@ -131,9 +131,9 @@ if selected == "About":
     """)
 
     # 添加图片并调整大小
-    st.image("/mnt/data/dataset.png", caption="Dataset Example", width=300)
-    st.image("/mnt/data/equation2.png", caption="Core Formula of MobileNetV2", width=300)
-    st.image("/mnt/data/uaai_a_2145638_f0001_oc.jpg", caption="MobileNetV2 Architecture and Applications", width=400)
+    st.image("dataset.png", caption="Dataset Example", width=300)
+    st.image("equation2.png", caption="Core Formula of MobileNetV2", width=300)
+    st.image("uaai_a_2145638_f0001_oc.jpg", caption="MobileNetV2 Architecture and Applications", width=400)
 
 
 # Result 页面
