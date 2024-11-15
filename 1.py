@@ -162,27 +162,26 @@ elif selected == "Result":
     st.markdown("**Example GUI:**")
     st.image("GUI.png", caption="GUI Interface", width=400)
 
-    # 显示 Evaluation Metrics 图片
-    st.markdown("**Example Evaluation Metrics:**")
-    st.markdown("- LR=0.0001 EPOCHS=20 DROPOUT=0.5")
-    st.image("Metrics1.png", caption="Evaluation Metrics 1", width=400)
-
-    st.markdown("- GUILR=0.0005 EPOCHS=20 DROPOUT=0.6")
-    st.image("Metrics2.png", caption="Evaluation Metrics 2", width=400)
-
-    st.markdown("- LR=0.0001 EPOCHS=30 DROPOUT=0.5")
-    st.image("Metrics3.png", caption="Evaluation Metrics 3", width=400)
-
-    # 显示 Loss & Accuracy Plot 图片
-    st.markdown("**Loss & Accuracy Plot:**")
-    st.markdown("- LR=0.0001 EPOCHS=20 DROPOUT=0.5")
-    st.image("Loss_Accuracy_LR_0.0001_EPOCHS_20.png", caption="Training Loss and Accuracy (LR=0.0001, EPOCHS=20)", width=400)
-
-    st.markdown("- LR=0.0005 EPOCHS=20 DROPOUT=0.6")
-    st.image("Loss_Accuracy_LR_0.0001_EPOCHS_30.png", caption="Training Loss and Accuracy (LR=0.0001, EPOCHS=30)", width=400)
-
-    st.markdown("- LR=0.0001 EPOCHS=30 DROPOUT=0.5")
-    st.image("Loss_Accuracy_LR_0.0005_EPOCHS_20.png", caption="Training Loss and Accuracy (LR=0.0005, EPOCHS=20)", width=400)
+    # 分两行展示图片
+    st.markdown("**Evaluation Metrics and Loss & Accuracy Plots:**")
+    
+    # 第一行三张图片
+    cols1 = st.columns(3)
+    with cols1[0]:
+        st.image("Metrics1.png", caption="Evaluation Metrics 1", width=300)
+    with cols1[1]:
+        st.image("Metrics2.png", caption="Evaluation Metrics 2", width=300)
+    with cols1[2]:
+        st.image("Metrics3.png", caption="Evaluation Metrics 3", width=300)
+    
+    # 第二行三张图片
+    cols2 = st.columns(3)
+    with cols2[0]:
+        st.image("Loss_Accuracy_LR_0.0001_EPOCHS_20.png", caption="Loss & Accuracy (LR=0.0001, EPOCHS=20)", width=300)
+    with cols2[1]:
+        st.image("Loss_Accuracy_LR_0.0001_EPOCHS_30.png", caption="Loss & Accuracy (LR=0.0001, EPOCHS=30)", width=300)
+    with cols2[2]:
+        st.image("Loss_Accuracy_LR_0.0005_EPOCHS_20.png", caption="Loss & Accuracy (LR=0.0005, EPOCHS=20)", width=300)
 
 
    
