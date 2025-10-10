@@ -4,11 +4,13 @@
 + When you are all set, run the train_mask_detector.py to train the model.
 + When model is available, run face_mask_detection.py to get in to the GUI.
 
-## 演示视频
+## Vedio
 
 ![Watch the video](The Excution Vedio-compress.gif)
 
-[点击这里观看完整视频](The Excution Vedio-compress.mp4)
+[Click here to watch the full video](The Excution Vedio-compress.mp4)
+
+
 
 
 **** 
@@ -31,3 +33,4 @@
 ### LR=0.0001 EPOCHS=30 DROPOUT=0.5
 
 ![Loss_Accuracy_LR_0.0001_EPOCHS_30.png](Loss_Accuracy_LR_0.0001_EPOCHS_30.png)
+
